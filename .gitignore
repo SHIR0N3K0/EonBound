@@ -49,6 +49,9 @@ SourceArt/**/*.tga
 Binaries/*
 Plugins/**/Binaries/*
 
+# RiderLink Plugin
+Plugins/Developer/RiderLink/*
+
 # Builds
 Build/*
 
@@ -78,3 +81,4 @@ DerivedDataCache/*
 .sln
 Automation_EonBound.slnx
 EonBound.slnx
+EonBound.sln.DotSettings.user

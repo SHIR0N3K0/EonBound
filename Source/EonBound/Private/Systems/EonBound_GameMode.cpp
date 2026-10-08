@@ -3,3 +3,12 @@
 
 #include "Systems/EonBound_GameMode.h"
 
+void AEonBound_GameMode::SetController()
+{
+	APlayerController* CurrentPlayerController = GetWorld()->GetFirstPlayerController();
+	
+	if (CurrentPlayerController != nullptr)
+	{
+		return;
+	}
+}

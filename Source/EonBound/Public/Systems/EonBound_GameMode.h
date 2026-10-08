@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "EonBound_GameMode.generated.h"
 
+class AEonBound_PlayerControler;
 /**
  * 
  */
@@ -14,4 +15,11 @@ class EONBOUND_API AEonBound_GameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+
+	UPROPERTY()
+	AEonBound_PlayerControler* EonBound_PC;
+	
+	UFUNCTION()
+	void SetController();
 };
