@@ -17,16 +17,16 @@ class EONBOUND_API AEonBound_PlayerState : public APlayerState, public IAbilityS
 {
 	GENERATED_BODY()	
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UEonBound_AbilitySystemComponent> EonBound_ASC;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	TObjectPtr<UEonBound_AttributeSet> EonBound_AttributeSet;
 	
 public:
-	AEonBound_PlayerState();
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	AEonBound_PlayerState();
 	
 protected:	
 	virtual void BeginPlay() override;

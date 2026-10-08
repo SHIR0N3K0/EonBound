@@ -17,6 +17,7 @@ void UEonBound_AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(UEonBound_AttributeSet, Attack, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UEonBound_AttributeSet, Defense, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UEonBound_AttributeSet, Speed, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UEonBound_AttributeSet, Energy, COND_None, REPNOTIFY_Always);
 }
 
 void UEonBound_AttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
@@ -42,4 +43,9 @@ void UEonBound_AttributeSet::OnRep_Defense(const FGameplayAttributeData& OldDefe
 void UEonBound_AttributeSet::OnRep_Speed(const FGameplayAttributeData& OldSpeed)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UEonBound_AttributeSet, Speed, OldSpeed);
+}
+
+void UEonBound_AttributeSet::OnRep_Energy(const FGameplayAttributeData& OldEnergy)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UEonBound_AttributeSet, Energy, OldEnergy);
 }

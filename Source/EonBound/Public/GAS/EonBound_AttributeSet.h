@@ -43,6 +43,10 @@ public:
 	FGameplayAttributeData Speed = 100;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Speed);
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Energy)
+	FGameplayAttributeData Energy = 0;
+	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Energy);
+	
 protected : 
 	UFUNCTION()
 	virtual void OnRep_Health(const FGameplayAttributeData& OldHealth);
@@ -58,5 +62,8 @@ protected :
 	
 	UFUNCTION()
 	virtual void OnRep_Speed(const FGameplayAttributeData& OldSpeed);
+	
+	UFUNCTION()
+	virtual void OnRep_Energy(const FGameplayAttributeData& OldEnergy);
     	
 };

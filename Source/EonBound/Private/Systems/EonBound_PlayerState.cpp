@@ -8,6 +8,8 @@
 AEonBound_PlayerState::AEonBound_PlayerState()
 {
 	EonBound_ASC = CreateDefaultSubobject<UEonBound_AbilitySystemComponent>("EonBound_ASC");
+	EonBound_ASC->SetIsReplicated(true);
+	SetNetUpdateFrequency(70);
 	EonBound_AttributeSet = CreateDefaultSubobject<UEonBound_AttributeSet>("EonBound_AttributeSet");
 }
 

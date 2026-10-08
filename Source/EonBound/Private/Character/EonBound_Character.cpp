@@ -4,12 +4,14 @@
 #include "Character/EonBound_Character.h"
 #include "AbilitySystemComponent.h"
 #include "GAS/EonBound_AbilitySystemComponent.h"
-#include "Systems/EonBound_PlayerState.h"	
+#include "Systems/EonBound_PlayerState.h"
+#include "GAS/Effects/EonBound_GE_DefaultAttribute.h"
 
 // Sets default values
 AEonBound_Character::AEonBound_Character()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't 
+ 	// need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 }
@@ -19,6 +21,7 @@ void AEonBound_Character::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	InitializeDefaultAttributes();
 }
 
 // Called every frame
@@ -44,9 +47,36 @@ void AEonBound_Character::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	
-	if (AEonBound_PlayerState* CustomPlayerState = GetPlayerState<AEonBound_PlayerState>())
+	TObjectPtr<AEonBound_PlayerState> EonBound_PS = GetPlayerState<AEonBound_PlayerState>();
+	if (EonBound_PS)
 	{
-		EonBound_ASC = Cast<UEonBound_AbilitySystemComponent>(CustomPlayerState->GetAbilitySystemComponent());
-		CustomPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(CustomPlayerState, this);
+		EonBound_ASC = Cast<UEonBound_AbilitySystemComponent>(EonBound_PS->GetAbilitySystemComponent());
+		if (EonBound_ASC)
+		{
+			EonBound_ASC->InitAbilityActorInfo(EonBound_PS, this);
+		}
 	}
+}
+
+void AEonBound_Character::OnRep_PlayerState()
+{
+	
+}
+
+//TEMPORARY: Set the default value of the Chara using a Gameplay Effect
+void AEonBound_Character::InitializeDefaultAttributes()
+{
+	if (!EonBound_ASC){return;}
+	
+	FGameplayEffectContextHandle EffectContext =
+		EonBound_ASC->MakeEffectContext();
+
+	FGameplayEffectSpecHandle EffectSpec = EonBound_ASC->MakeOutgoingSpec(
+	UEonBound_GE_DefaultAttribute::StaticClass(),1.f,EffectContext);
+
+	if (EffectSpec.IsValid())
+	{
+		EonBound_ASC->ApplyGameplayEffectSpecToSelf(*EffectSpec.Data.Get());
+	}
+	
 }

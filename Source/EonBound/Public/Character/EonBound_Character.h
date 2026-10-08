@@ -15,8 +15,11 @@ class EONBOUND_API AEonBound_Character : public ACharacter, public IAbilitySyste
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+protected:
+	UPROPERTY()
 	TObjectPtr<UEonBound_AbilitySystemComponent> EonBound_ASC;
+	
+	void InitializeDefaultAttributes();
 
 public:
 	// Sets default values for this character's properties
@@ -30,10 +33,7 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
 	
-	int Health;
-	int MaxHealth;
-	int Attack;
-	int Defense;
-	int Speed;
+	
 };

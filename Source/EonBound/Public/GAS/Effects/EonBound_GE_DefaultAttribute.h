@@ -14,4 +14,6 @@ class EONBOUND_API UEonBound_GE_DefaultAttribute : public UGameplayEffect
 {
 	GENERATED_BODY()
 	
+public:
+	UEonBound_GE_DefaultAttribute();
 };
