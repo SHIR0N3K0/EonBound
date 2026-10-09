@@ -21,7 +21,6 @@ void AEonBound_Character::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	InitializeDefaultAttributes();
 }
 
 // Called every frame
@@ -55,12 +54,22 @@ void AEonBound_Character::PossessedBy(AController* NewController)
 		{
 			EonBound_ASC->InitAbilityActorInfo(EonBound_PS, this);
 		}
+		InitializeDefaultAttributes();
 	}
 }
 
 void AEonBound_Character::OnRep_PlayerState()
 {
-	
+	TObjectPtr<AEonBound_PlayerState> EonBound_PS = GetPlayerState<AEonBound_PlayerState>();
+	if (EonBound_PS)
+	{
+		EonBound_ASC = Cast<UEonBound_AbilitySystemComponent>(EonBound_PS->GetAbilitySystemComponent());
+		if (EonBound_ASC)
+		{
+			EonBound_ASC->InitAbilityActorInfo(EonBound_PS, this);
+		}
+		InitializeDefaultAttributes();
+	}
 }
 
 //TEMPORARY: Set the default value of the Chara using a Gameplay Effect

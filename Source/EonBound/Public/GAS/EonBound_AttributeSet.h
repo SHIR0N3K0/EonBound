@@ -22,29 +22,31 @@ class EONBOUND_API UEonBound_AttributeSet : public UAttributeSet
 	
 public:
 	UEonBound_AttributeSet();
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health)
-	FGameplayAttributeData Health = 100;
+	FGameplayAttributeData Health = 1000;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Health);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_HealthMax)
-	FGameplayAttributeData HealthMax = 100;
+	FGameplayAttributeData HealthMax = 1000;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, HealthMax);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Attack)
-	FGameplayAttributeData Attack = 5;
+	FGameplayAttributeData Attack = 50;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Attack);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Defense)
-	FGameplayAttributeData Defense = 5;
+	FGameplayAttributeData Defense = 50;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Defense);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Speed)
-	FGameplayAttributeData Speed = 100;
+	FGameplayAttributeData Speed = 1000;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Speed);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Energy)
-	FGameplayAttributeData Energy = 0;
+	FGameplayAttributeData Energy = 100;
 	ATTRIBUTE_ACCESSORS(UEonBound_AttributeSet, Energy);
 	
 protected : 

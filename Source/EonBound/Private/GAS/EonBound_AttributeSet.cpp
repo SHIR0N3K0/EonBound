@@ -27,7 +27,7 @@ void UEonBound_AttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealt
 
 void UEonBound_AttributeSet::OnRep_HealthMax(const FGameplayAttributeData& OldHealthMax)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UEonBound_AttributeSet, Health, OldHealthMax);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UEonBound_AttributeSet, HealthMax, OldHealthMax);
 }
 
 void UEonBound_AttributeSet::OnRep_Attack(const FGameplayAttributeData& OldAttack)

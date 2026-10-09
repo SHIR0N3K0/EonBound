@@ -58,7 +58,7 @@ UEonBound_GE_DefaultAttribute::UEonBound_GE_DefaultAttribute()
 	// Speed
 	{
 		FGameplayModifierInfo Modifier;
-		Modifier.Attribute = UEonBound_AttributeSet::GetDefenseAttribute();
+		Modifier.Attribute = UEonBound_AttributeSet::GetSpeedAttribute();
 		Modifier.ModifierOp = EGameplayModOp::Override;
 		Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(
 			FScalableFloat(75.f)

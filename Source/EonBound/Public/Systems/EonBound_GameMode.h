@@ -14,7 +14,7 @@ UCLASS()
 class EONBOUND_API AEonBound_GameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+
 public:
 
 	UPROPERTY()
