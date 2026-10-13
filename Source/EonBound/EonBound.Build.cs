@@ -9,7 +9,7 @@ public class EonBound : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", 
-			"EnhancedInput", "AIModule", "GameplayStateTreeModule", "UMG", "Slate", "GameplayAbilities", 
+			"EnhancedInput", "AIModule", "UMG", "Slate", "GameplayAbilities", 
 			"GameplayTasks", "GameplayTags", });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
