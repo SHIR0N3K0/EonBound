@@ -39,18 +39,23 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	EEonBound_CombatState CombatState = EEonBound_CombatState::Preparing;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<AActor> ActiveCombatant;
+	
+public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
 	TArray<TObjectPtr<AActor>> PlayerCombatants;
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
 	TArray<TObjectPtr<AActor>> EnemyCombatants;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	TObjectPtr<AActor> ActiveCombatant;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<AActor> PlayerTarget;
+
 private:
 	void SetCombatState(EEonBound_CombatState NewState);
 	void SelectNextCombatant();
 	void StartEnemyTurn();
 	bool IsCombatantAlive(AActor* Combatant) const;
+	bool bNextTurnIsPlayer = true;
 };

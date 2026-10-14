@@ -26,10 +26,9 @@ private:
 	UPROPERTY()
 	TObjectPtr<AEonBound_PlayerControler> EonBound_PC;
 	
-	UPROPERTY(Transient)
-	TObjectPtr<UEonBound_CombatManager> CombatManager;
-	
 public:
+		UPROPERTY(Transient)
+	TObjectPtr<UEonBound_CombatManager> CombatManager;
 	TObjectPtr<UEonBound_CombatManager> GetCombatManager() const;
 	
 	virtual void StartPlay() override;

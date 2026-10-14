@@ -49,7 +49,6 @@ void UEonBound_AttributeSet::PostGameplayEffectExecute(const struct FGameplayEff
 		(OldHealthValue - (CurrentDamage / (1 + CurrentDefense/CurrentBalancingCoefficient)), 0, MaxHealthValue);
 		
 		UE_LOG(LogTemp, Warning, TEXT("Target Health: %.2f -> %.2f"),OldHealthValue,NewHealthValue);
-		UE_LOG(LogTemp, Warning, TEXT("Target Max Health: %.2f"),MaxHealthValue);
 		
 		
 		if (OldHealthValue != NewHealthValue)

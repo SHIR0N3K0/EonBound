@@ -20,6 +20,14 @@ void AEonBound_GameMode::StartPlay()
 	
 	SpawnTestCombatants();
 	CombatManager = NewObject<UEonBound_CombatManager>(this);
+	
+	if (IsValid(SpawnedTestAlly) && IsValid(SpawnedTestEnemy))
+	{
+		CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
+		CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
+
+		CombatManager->StartCombat();
+	}
 }
 
 void AEonBound_GameMode::SpawnTestCombatants()
@@ -69,13 +77,4 @@ void AEonBound_GameMode::SpawnTestCombatants()
 	// Résumé du résultat
 	UE_LOG(LogTemp,Log,TEXT("Resultat spawn - Allie : %s | Ennemi : %s"),
 		SpawnedTestAlly ? TEXT("OK") : TEXT("ECHEC"),SpawnedTestEnemy ? TEXT("OK") : TEXT("ECHEC"));
-	
-	// Assignation des cibles : les deux personnages existent maintenant.
-	if (IsValid(SpawnedTestAlly) && IsValid(SpawnedTestEnemy))
-	{
-		SpawnedTestAlly->CurrentTarget = SpawnedTestEnemy;
-		SpawnedTestEnemy->CurrentTarget = SpawnedTestAlly;
-
-		UE_LOG(LogTemp, Log, TEXT("Cibles assignees correctement."));
-	}
 }

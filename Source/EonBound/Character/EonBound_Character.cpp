@@ -3,6 +3,7 @@
 
 #include "EonBound_Character.h"
 #include "AbilitySystemComponent.h"
+#include "EonBound/Combat/EonBound_CombatManager.h"
 #include "EonBound/GAS/EonBound_AbilitySystemComponent.h"
 #include "EonBound/GAS/EonBound_AttributeSet.h"
 #include "EonBound/GAS/Abilities/EonBound_GA_NormalAttack.h"
@@ -53,6 +54,11 @@ void AEonBound_Character::SetupPlayerInputComponent(UInputComponent* PlayerInput
 UAbilitySystemComponent* AEonBound_Character::GetAbilitySystemComponent() const
 {
 	return EonBound_ASC;
+}
+
+void AEonBound_Character::SetCombatManager(UEonBound_CombatManager* InCombatManager)
+{
+	CombatManager = InCombatManager;
 }
 
 void AEonBound_Character::GiveInitialAbilities()

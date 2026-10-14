@@ -13,8 +13,12 @@ UCLASS()
 class EONBOUND_API UEonBound_GA_NormalAttack : public UEonBound_GameplayAbility
 {
 	GENERATED_BODY()
+
+public:
+	UEonBound_GA_NormalAttack();
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+protected:
+	UPROPERTY()
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 	
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,

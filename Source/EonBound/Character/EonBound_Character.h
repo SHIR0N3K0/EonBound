@@ -9,9 +9,10 @@
 #include "EonBound_Character.generated.h"
 
 class UEonBound_AbilitySystemComponent;
-class UEonBound_AttributeSet;
+class UEonBound_AttributeSet;	
 class UEonBound_CombatComponent;
 class UGameplayAbility;
+class UEonBound_CombatManager;
 
 UCLASS()
 class EONBOUND_API AEonBound_Character : public ACharacter, public IAbilitySystemInterface
@@ -25,11 +26,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	TObjectPtr<UEonBound_AttributeSet> EonBound_AttributeSet;
 	
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite,Category = "Combat")
+	TObjectPtr<UEonBound_CombatManager> CombatManager;
+	
 	UPROPERTY()
 	bool bDefaultAttributesInitialized = false;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "GAS")
-	TSubclassOf<UGameplayAbility> BasicAttackAbility;
 	
 	void InitializeDefaultAttributes();
 
@@ -39,6 +40,16 @@ public:
 	virtual void BeginPlay() override;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	TSubclassOf<UGameplayAbility> BasicAttackAbility;
+
+	void SetCombatManager(UEonBound_CombatManager* InCombatManager);
+	
+	UEonBound_CombatManager* GetCombatManager() const
+	{
+		return CombatManager.Get();
+	}
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

@@ -6,6 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "EonBound_PlayerControler.generated.h"
 
+class UInputAction;
+class UInputMappingContext;
+
 /**
  * 
  */
@@ -19,4 +22,14 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputMappingContext> InputMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> BasicAttackAction;
+
+private:
+	void HandleBasicAttack();
 };

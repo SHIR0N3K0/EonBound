@@ -2,13 +2,17 @@
 
 
 #include "EonBound_GA_NormalAttack.h"
-
 #include "AbilitySystemBlueprintLibrary.h"
-
-#include "EonBound/GAS/EonBound_AttributeSet.h"
-
+#include "EonBound/GAS/Effects/EonBound_GE_Attack.h"
 #include "AbilitySystemComponent.h"
 #include "EonBound/Character/EonBound_Character.h"
+#include "EonBound/Combat/EonBound_CombatManager.h"
+
+UEonBound_GA_NormalAttack::UEonBound_GA_NormalAttack()
+{
+	DamageEffectClass = UEonBound_GE_Attack::StaticClass();
+	AbilityTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.BasicAttack")));
+}
 
 void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
@@ -80,21 +84,25 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 
 		if (Spec.IsValid())
 		{
-			//Health Before
-			const float HealthBefore = TargetASC->GetNumericAttribute(UEonBound_AttributeSet::GetHealthAttribute());
-
-			FActiveGameplayEffectHandle EffectHandle = TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
-			UE_LOG(LogTemp, Warning, TEXT("Damage effect applied: %s"),EffectHandle.IsValid() ? TEXT("true") : TEXT("false"));
-			
-			/*TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());*/
-
-			//Health After
-			const float HealthAfter = TargetASC->GetNumericAttribute(UEonBound_AttributeSet::GetHealthAttribute());
-
-			UE_LOG(LogTemp, Warning, TEXT("Target Health: %.2f -> %.2f"),HealthBefore,HealthAfter);
+			TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 		}
 	}
 
+	UE_LOG(LogTemp, Warning,TEXT("[Combat] NormalAttack: EndAbility called."));
+	
+	if (AEonBound_Character* AttackingChar = Cast<AEonBound_Character>(ActorInfo->AvatarActor.Get()))
+	{
+		UE_LOG(LogTemp, Warning,TEXT("[Combat] Attacker: %s | Manager: %s"),*AttackingChar->GetName(),
+			AttackingChar->GetCombatManager()? TEXT("Valid"): TEXT("NULL"));
+		
+		if (AttackingChar->GetCombatManager())
+		{
+			UE_LOG(LogTemp, Warning,TEXT("[Combat] Calling NotifyActionFinished."));
+			AttackingChar->GetCombatManager()->NotifyActionFinished();
+		}
+		
+	}
+	
 	// Termine l'ability sans la marquer comme ayant été annulée.
 	EndAbility(Handle,ActorInfo,ActivationInfo,true,false);
 }
