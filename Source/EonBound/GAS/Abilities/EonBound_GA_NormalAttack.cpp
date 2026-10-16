@@ -11,7 +11,10 @@
 UEonBound_GA_NormalAttack::UEonBound_GA_NormalAttack()
 {
 	DamageEffectClass = UEonBound_GE_Attack::StaticClass();
-	AbilityTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.BasicAttack")));
+	//New API: Set the ability's asset tags to "Ability.BasicAttack" for identification and filtering purposes.
+	FGameplayTag BasicAttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.BasicAttack"));
+	SetAssetTags(FGameplayTagContainer(BasicAttackTag));
+
 }
 
 void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -87,10 +90,18 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 			TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 		}
 	}
+	
+	//Delay the end of the ability to allow the animation to play before ending the ability.
+	ActorInfoCopy = ActorInfo;
+	GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle,this, &UEonBound_GA_NormalAttack::OnDelayTimerFinished,2.0f,false);
+	
+}
 
+void UEonBound_GA_NormalAttack::OnDelayTimerFinished()
+{
 	UE_LOG(LogTemp, Warning,TEXT("[Combat] NormalAttack: EndAbility called."));
 	
-	if (AEonBound_Character* AttackingChar = Cast<AEonBound_Character>(ActorInfo->AvatarActor.Get()))
+	if (AEonBound_Character* AttackingChar = Cast<AEonBound_Character>(ActorInfoCopy->AvatarActor.Get()))
 	{
 		UE_LOG(LogTemp, Warning,TEXT("[Combat] Attacker: %s | Manager: %s"),*AttackingChar->GetName(),
 			AttackingChar->GetCombatManager()? TEXT("Valid"): TEXT("NULL"));
@@ -104,6 +115,6 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	}
 	
 	// Termine l'ability sans la marquer comme ayant été annulée.
-	EndAbility(Handle,ActorInfo,ActivationInfo,true,false);
+	EndAbility(CurrentSpecHandle, ActorInfoCopy, CurrentActivationInfo, true, false);
 }
 	

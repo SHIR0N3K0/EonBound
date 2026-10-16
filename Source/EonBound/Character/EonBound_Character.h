@@ -63,6 +63,6 @@ public:
 	TObjectPtr<AActor> CurrentTarget;
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TryBasicAttack();
+	bool TryBasicAttack();
 	
 };

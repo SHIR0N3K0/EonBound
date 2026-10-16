@@ -37,6 +37,10 @@ public:
 	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, Speed);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CustomAbilitySystemComponent, Replicated)
+	FGameplayAttributeData ATB;
+	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, ATB);
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CustomAbilitySystemComponent, Replicated)
 	FGameplayAttributeData Energy;
 	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, Energy);
 	

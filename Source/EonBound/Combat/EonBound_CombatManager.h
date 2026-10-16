@@ -8,6 +8,7 @@
 #include "EonBound_CombatManager.generated.h"
 
 class UEonBound_CombatComponent;
+class AEonBound_Character;
 
 /**
  * 
@@ -42,6 +43,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<AActor> ActiveCombatant;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<AActor>> TurnOrder;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
+	int32 CurrentTurnIndex = 0;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
+	int32 RoundNumber = 1;
+	
+	
 public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
 	TArray<TObjectPtr<AActor>> PlayerCombatants;
@@ -54,8 +65,10 @@ public:
 
 private:
 	void SetCombatState(EEonBound_CombatState NewState);
-	void SelectNextCombatant();
 	void StartEnemyTurn();
 	bool IsCombatantAlive(AActor* Combatant) const;
-	bool bNextTurnIsPlayer = true;
+	void BuildTurnOrder();
+	float GetCombatantSpeed(AEonBound_Character* Combatant) const;
+	void AdvanceTurn();
+	void StartCurrentTurn();
 };

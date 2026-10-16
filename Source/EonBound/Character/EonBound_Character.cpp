@@ -33,7 +33,8 @@ void AEonBound_Character::BeginPlay()
 	if (EonBound_ASC)
 	{
 		EonBound_ASC->InitAbilityActorInfo(this, this);
-		InitializeDefaultAttributes();
+		//InitializeDefaultAttributes();
+		GiveInitialAbilities();
 	}
 }
 
@@ -74,17 +75,16 @@ void AEonBound_Character::GiveInitialAbilities()
 	}
 }
 
-void AEonBound_Character::TryBasicAttack()
+bool AEonBound_Character::TryBasicAttack()
 {
 	if (!CurrentTarget || !EonBound_ASC)
 	{
-		return;
+		return false;
 	}
 	
 	FGameplayTag AttackTag =FGameplayTag::RequestGameplayTag(FName("Ability.BasicAttack"));
-
-	const bool bActivated =
-	EonBound_ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
+	
+	const bool bActivated = EonBound_ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
 
 	if (bActivated)
 	{
@@ -92,9 +92,9 @@ void AEonBound_Character::TryBasicAttack()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning,
-			TEXT("Basic attack ability activation failed. Check that the ability is granted, has the tag Ability.BasicAttack, and is not blocked."));
+		UE_LOG(LogTemp, Warning,TEXT("Basic attack ability activation failed. Check that the ability is granted, has the tag Ability.BasicAttack, and is not blocked."));
 	}
+	return bActivated;
 }
 
 //TEMPORARY: Set the default value of the Chara using a Gameplay Effect

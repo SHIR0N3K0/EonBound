@@ -16,4 +16,5 @@ class EONBOUND_API AEonBound_PlayerCharacter : public AEonBound_Character
 public:
 	AEonBound_PlayerCharacter();
 	
+	virtual void BeginPlay() override;
 };

@@ -18,14 +18,14 @@ void AEonBound_GameMode::StartPlay()
 {
 	Super::StartPlay();
 	
-	SpawnTestCombatants();
 	CombatManager = NewObject<UEonBound_CombatManager>(this);
+	
+	SpawnTestCombatants();
 	
 	if (IsValid(SpawnedTestAlly) && IsValid(SpawnedTestEnemy))
 	{
-		CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
-		CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
-
+		//CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
+		//CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
 		CombatManager->StartCombat();
 	}
 }
@@ -51,11 +51,15 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		SpawnedTestAlly = World->SpawnActor<AEonBound_PlayerCharacter>(TestAllyClass,TestAllySpawnTransform,SpawnParams);
-
-		if (SpawnedTestAlly)
+		for (int32 i = 0; i < 2; i++)
 		{
-			UE_LOG(LogTemp,Log,TEXT("Allie spawn : %s"),*SpawnedTestAlly->GetName());
+			SpawnedTestAlly = World->SpawnActor<AEonBound_PlayerCharacter>(TestAllyClass,TestAllySpawnTransform,SpawnParams);
+			CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
+
+			if (SpawnedTestAlly)
+			{
+				UE_LOG(LogTemp,Log,TEXT("Allie spawn : %s"),*SpawnedTestAlly->GetName());
+			}
 		}
 	}
 
@@ -66,11 +70,14 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		SpawnedTestEnemy = World->SpawnActor<AEonBound_EnemyCharacter>(TestEnemyClass,TestEnemySpawnTransform,SpawnParams);
-
-		if (SpawnedTestEnemy)
+		for (int32 i = 0; i < 2; i++)
 		{
-			UE_LOG(LogTemp,Log,TEXT("Ennemi spawn : %s"),*SpawnedTestEnemy->GetName());
+			SpawnedTestEnemy = World->SpawnActor<AEonBound_EnemyCharacter>(TestEnemyClass,TestEnemySpawnTransform,SpawnParams);
+			CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
+			if (SpawnedTestEnemy)
+			{
+				UE_LOG(LogTemp,Log,TEXT("Ennemi spawn : %s"),*SpawnedTestEnemy->GetName());
+			}
 		}
 	}
 
