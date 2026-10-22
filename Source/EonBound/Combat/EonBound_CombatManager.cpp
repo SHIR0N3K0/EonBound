@@ -37,8 +37,8 @@ void UEonBound_CombatManager::StartCombat()
 	}
 
 	// Le manager est créé en C++ : chaque personnage reçoit donc sa référence
-	// ici, au moment où le combat commence, plutôt que via le Blueprint.
-	for (AActor* Combatant : PlayerCombatants)
+	// ici, au moment où le combat commence
+	for (AEonBound_Character* Combatant : PlayerCombatants)
 	{
 		if (AEonBound_Character* Character = Cast<AEonBound_Character>(Combatant))
 		{
@@ -46,7 +46,7 @@ void UEonBound_CombatManager::StartCombat()
 		}
 	}
 
-	for (AActor* Combatant : EnemyCombatants)
+	for (AEonBound_Character* Combatant : EnemyCombatants)
 	{
 		if (AEonBound_Character* Character = Cast<AEonBound_Character>(Combatant))
 		{
@@ -66,10 +66,10 @@ void UEonBound_CombatManager::StartCombat()
 	RoundNumber = 1;
 
 	SetCombatState(EEonBound_CombatState::WaitingForTurn);
-	StartCurrentTurn();
+	StartCurrentTurn(true);
 }
 
-void UEonBound_CombatManager::RequestPlayerBasicAttack(AActor* Target)
+void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Target)
 {
 	UE_LOG(LogTemp, Warning,
 		TEXT("[Combat] RequestPlayerBasicAttack called. State: %s | Active: %s | Target: %s | Enemies: %d"),
@@ -134,7 +134,10 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AActor* Target)
 
 		SetCombatState(EEonBound_CombatState::PlayerTurn);
 	}
-	
+	else if (AEonBound_Character* TargetCharacter = Cast<AEonBound_Character>(Target))
+	{
+		TargetCharacter->SetTargetIndicationVisibility(false);
+	}
 	FString AttackerName = Attacker->GetName();
 	UE_LOG(LogTemp, Error, TEXT("The attacker is %s"), *AttackerName);
 
@@ -166,7 +169,7 @@ void UEonBound_CombatManager::CheckCombatEnd()
 	bool bAnyEnemyAlive = false;
 
 	// Vérifie si au moins un combattant de chaque équipe est encore vivant.
-	for (AActor* Player : PlayerCombatants)
+	for (AEonBound_Character* Player : PlayerCombatants)
 	{
 		if (IsCombatantAlive(Player))
 		{
@@ -175,7 +178,7 @@ void UEonBound_CombatManager::CheckCombatEnd()
 		}
 	}
 
-	for (AActor* Enemy : EnemyCombatants)
+	for (AEonBound_Character* Enemy : EnemyCombatants)
 	{
 		if (IsCombatantAlive(Enemy))
 		{
@@ -209,16 +212,38 @@ EEonBound_CombatState UEonBound_CombatManager::GetCombatState() const
 	return CombatState;
 }
 
+void UEonBound_CombatManager::SetSelectedTarget(AEonBound_Character* NewTarget)
+{
+	if (CombatState == EEonBound_CombatState::PlayerTurn)
+	{
+		// Vérifie si la nouvelle cible est différente de la cible actuelle.
+		if (PlayerTarget == NewTarget)
+		{
+			return;
+		}
+
+		// Met à jour la visibilité de l'indication de ciblage pour l'ancienne cible.
+		if (IsValid(PlayerTarget))
+		{
+			PlayerTarget->SetTargetIndicationVisibility(false);
+		}
+
+		// Met à jour la cible actuelle.
+		PlayerTarget = NewTarget;
+
+		// Met à jour la visibilité de l'indication de ciblage pour la nouvelle cible.
+		if (IsValid(PlayerTarget))
+		{
+			PlayerTarget->SetTargetIndicationVisibility(true);
+		}
+	}
+}
+
 void UEonBound_CombatManager::SetCombatState(EEonBound_CombatState NewState)
 {
 	// Centralise la mise à jour de l'état pour conserver des logs cohérents.
 	CombatState = NewState;
-
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf
-			(TEXT("Combat state changed to: %s"), *UEnum::GetValueAsString(CombatState)));
-	}
+	
 	UE_LOG(LogTemp, Warning,TEXT("Combat state: %s"),*UEnum::GetValueAsString(CombatState));
 }
 
@@ -230,10 +255,10 @@ void UEonBound_CombatManager::StartEnemyTurn()
 		return;
 	}
 	
-	AActor* Target = nullptr;
+	AEonBound_Character* Target = nullptr;
 
 	// Sélectionne le premier joueur encore vivant comme cible de l'attaque.
-	for (AActor* Player : PlayerCombatants)
+	for (AEonBound_Character* Player : PlayerCombatants)
 	{
 		if (IsCombatantAlive(Player))
 		{
@@ -260,13 +285,19 @@ void UEonBound_CombatManager::StartEnemyTurn()
 
 	Attacker->CurrentTarget = Target;
 	SetCombatState(EEonBound_CombatState::ExecutingAction);
-	Attacker->TryBasicAttack();	
+	
+	if (!Attacker->TryBasicAttack())
+	{
+		UE_LOG(LogTemp,Error,TEXT("[Combat] Basic attack activation failed. Returning to EnemyTurn."));
+
+		SetCombatState(EEonBound_CombatState::EnemyTurn);
+	}
 	
 	FString AttackerName = Attacker->GetName();
 	UE_LOG(LogTemp, Error, TEXT("The attacker is %s"), *AttackerName);
 }
 
-bool UEonBound_CombatManager::IsCombatantAlive(AActor* Combatant) const
+bool UEonBound_CombatManager::IsCombatantAlive(AEonBound_Character* Combatant) const
 {
 	// Vérifie que le combattant est valide et possède un composant GAS.
 	if (!IsValid(Combatant))
@@ -301,7 +332,7 @@ void UEonBound_CombatManager::BuildTurnOrder()
 	TurnOrder.Reset();
 	
 	// Ajouter les combattants des deux équipes.
-	for (AActor* Combatant : PlayerCombatants)
+	for (AEonBound_Character* Combatant : PlayerCombatants)
 	{
 		if (IsCombatantAlive(Combatant))
 		{
@@ -309,7 +340,7 @@ void UEonBound_CombatManager::BuildTurnOrder()
 		}
 	}
 	
-	for (AActor* Combatant : EnemyCombatants)
+	for (AEonBound_Character* Combatant : EnemyCombatants)
 	{
 		if (IsCombatantAlive(Combatant))
 		{
@@ -319,7 +350,7 @@ void UEonBound_CombatManager::BuildTurnOrder()
 	
 	// Trier par Speed décroissante.
 	// En cas d'égalité, l'ordre précédent est conservé.	
-	TurnOrder.StableSort([this](const AActor& A, const AActor& B)
+	TurnOrder.StableSort([this](const AEonBound_Character& A, const AEonBound_Character& B)
 	{
 		const AEonBound_Character* CharacterA = Cast<AEonBound_Character>(&A);
 
@@ -336,7 +367,7 @@ void UEonBound_CombatManager::BuildTurnOrder()
 	for (int32 i = 0; i < TurnOrder.Num(); i++)
 	{
 		
-		AActor* Actor = TurnOrder[i].Get();AEonBound_Character* Character = Cast<AEonBound_Character>(Actor);
+		AEonBound_Character* Actor = TurnOrder[i].Get();AEonBound_Character* Character = Cast<AEonBound_Character>(Actor);
 		if (!Character)
 		{
 			continue;
@@ -344,9 +375,7 @@ void UEonBound_CombatManager::BuildTurnOrder()
 		
 		if (TurnOrder[i])
 		{
-			UE_LOG(LogTemp, Error, TEXT("TurnOrder[%d]: %s"),
-				i,
-				*TurnOrder[i]->GetName());
+			UE_LOG(LogTemp, Error, TEXT("TurnOrder[%d]: %s"),i,*TurnOrder[i]->GetName());
 		}
 		else
 		{
@@ -363,25 +392,21 @@ float UEonBound_CombatManager::GetCombatantSpeed(AEonBound_Character* Combatant)
 		return 0.f;
 	}
 
-	IAbilitySystemInterface* AbilitySystemInterface =
-		Cast<IAbilitySystemInterface>(Combatant);
+	IAbilitySystemInterface* AbilitySystemInterface = Cast<IAbilitySystemInterface>(Combatant);
 
 	if (!AbilitySystemInterface)
 	{
 		return 0.f;
 	}
 
-	UAbilitySystemComponent* ASC =
-		AbilitySystemInterface->GetAbilitySystemComponent();
+	UAbilitySystemComponent* ASC = AbilitySystemInterface->GetAbilitySystemComponent();
 
 	if (!ASC)
 	{
 		return 0.f;
 	}
 
-	return ASC->GetNumericAttribute(
-		UEonBound_AttributeSet::GetSpeedAttribute()
-	);
+	return ASC->GetNumericAttribute(UEonBound_AttributeSet::GetSpeedAttribute());
 }
 
 void UEonBound_CombatManager::AdvanceTurn()
@@ -415,12 +440,12 @@ void UEonBound_CombatManager::AdvanceTurn()
 			UE_LOG(LogTemp, Warning,TEXT("[Turn] Starting round %d"),RoundNumber);
 		}
 
-		AActor* NextCombatant = TurnOrder[CurrentTurnIndex].Get();
+		AEonBound_Character* NextCombatant = TurnOrder[CurrentTurnIndex].Get();
 
 		if (IsCombatantAlive(NextCombatant))
 		{
 			SetCombatState(EEonBound_CombatState::WaitingForTurn);
-			StartCurrentTurn();
+			StartCurrentTurn(false);
 			return;
 		}
 	}
@@ -429,7 +454,7 @@ void UEonBound_CombatManager::AdvanceTurn()
 	CheckCombatEnd();
 }
 
-void UEonBound_CombatManager::StartCurrentTurn()
+void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 {
 	if (TurnOrder.IsEmpty())
 	{
@@ -441,7 +466,7 @@ void UEonBound_CombatManager::StartCurrentTurn()
 		return;
 	}
 
-	AActor* Combatant = TurnOrder[CurrentTurnIndex].Get();
+	AEonBound_Character* Combatant = TurnOrder[CurrentTurnIndex].Get();
 
 	// Ignorer les combattants morts ou invalides.
 	if (!IsCombatantAlive(Combatant))
@@ -457,16 +482,23 @@ void UEonBound_CombatManager::StartCurrentTurn()
 	{
 		SetCombatState(EEonBound_CombatState::PlayerTurn);
 
-		// Préparer la cible par défaut du joueur.
-		PlayerTarget = nullptr;
-
-		for (AActor* Enemy : EnemyCombatants)
+		if (bIsNewRound or IsCombatantAlive(PlayerTarget) == false)
 		{
-			if (IsCombatantAlive(Enemy))
+			// Préparer la cible par défaut du joueur.
+			PlayerTarget = nullptr;
+
+			for (AEonBound_Character* Enemy : EnemyCombatants)
 			{
-				PlayerTarget = Enemy;
-				break;
+				if (IsCombatantAlive(Enemy))
+				{
+					SetSelectedTarget(Enemy);
+					break;
+				}
 			}
+		}
+		else
+		{
+			PlayerTarget->SetTargetIndicationVisibility(true);
 		}
 
 		UE_LOG(LogTemp, Warning,TEXT("[Turn] Player turn: %s | Round: %d"),*GetNameSafe(ActiveCombatant),RoundNumber);
@@ -475,8 +507,22 @@ void UEonBound_CombatManager::StartCurrentTurn()
 	{
 		SetCombatState(EEonBound_CombatState::EnemyTurn);
 
-		UE_LOG(LogTemp, Warning,TEXT("[Turn] Enemy turn: %s | Round: %d"),*GetNameSafe(ActiveCombatant),RoundNumber);
+		if (bIsNewRound)
+		{
+			GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle,this, &UEonBound_CombatManager::OnDelayTimerFinished,2.0f,false);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning,TEXT("[Turn] Enemy turn: %s | Round: %d"),*GetNameSafe(ActiveCombatant),RoundNumber);
 
-		StartEnemyTurn();
+			StartEnemyTurn();
+		}
 	}
+}
+
+void UEonBound_CombatManager::OnDelayTimerFinished()
+{
+	UE_LOG(LogTemp, Warning,TEXT("[Turn] Enemy turn: %s | Round: %d"),*GetNameSafe(ActiveCombatant),RoundNumber);
+
+	StartEnemyTurn();
 }

@@ -31,6 +31,18 @@ UEonBound_GE_DefaultAttribute::UEonBound_GE_DefaultAttribute()
 		Modifiers.Add(Modifier);
 	}
 	
+	// Attack
+	{
+		FGameplayModifierInfo Modifier;
+		Modifier.Attribute = UEonBound_AttributeSet::GetAttackAttribute();
+		Modifier.ModifierOp = EGameplayModOp::Override;
+		Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(
+			FScalableFloat(40.f)
+		);
+
+		Modifiers.Add(Modifier);
+	}
+	
 	// Defense
 	{
 		FGameplayModifierInfo Modifier;

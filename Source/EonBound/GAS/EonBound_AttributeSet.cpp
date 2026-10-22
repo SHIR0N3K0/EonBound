@@ -10,14 +10,15 @@ UEonBound_AttributeSet::UEonBound_AttributeSet()
 {
 	InitHealth(100);
 	InitHealthMax(100);
+	InitAttack(20);
 	InitDefense(50);
 	InitSpeed(200);
 	InitATB(1);
 	InitEnergy(100);
 	InitDamage(0);
 	InitBalancingCoefficient(100);
-	InitCritChance(0);
-	InitCritDamage(0);
+	InitCritChance(10);
+	InitCritDamage(120);
 }
 
 void UEonBound_AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -25,6 +26,7 @@ void UEonBound_AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);		
 	DOREPLIFETIME(UEonBound_AttributeSet, Health);
 	DOREPLIFETIME(UEonBound_AttributeSet, HealthMax);
+	DOREPLIFETIME(UEonBound_AttributeSet, Attack);
 	DOREPLIFETIME(UEonBound_AttributeSet, Defense);
 	DOREPLIFETIME(UEonBound_AttributeSet, Speed);
 	DOREPLIFETIME(UEonBound_AttributeSet, ATB);

@@ -3,7 +3,9 @@
 #include "EonBound_PlayerControler.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "EonBound_GameMode.h"
+#include "Camera/CameraActor.h"
+#include "EonBound/Character/EonBound_Character.h"
+#include "Engine/EngineTypes.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
@@ -17,11 +19,8 @@ void AEonBound_PlayerControler::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("[Input] BeginPlay - Controller: %s | Local: %s | IMC: %s | IA: %s"),
-		*GetNameSafe(this),
-		IsLocalController() ? TEXT("true") : TEXT("false"),
-		*GetNameSafe(InputMappingContext),
-		*GetNameSafe(BasicAttackAction));
+	UE_LOG(LogTemp, Warning, TEXT("[Input] BeginPlay - Controller: %s | Local: %s | IMC: %s"),*GetNameSafe(this),
+		IsLocalController() ? TEXT("true") : TEXT("false"),*GetNameSafe(InputMappingContext));
 
 	if (IsLocalController())
 	{
@@ -32,13 +31,11 @@ void AEonBound_PlayerControler::BeginPlay()
 				if (InputMappingContext)
 				{
 					InputSubsystem->AddMappingContext(InputMappingContext, 0);
-					UE_LOG(LogTemp, Warning, TEXT("[Input] IMC added successfully: %s"),
-						*GetNameSafe(InputMappingContext));
+					UE_LOG(LogTemp, Warning, TEXT("[Input] IMC added successfully: %s"),*GetNameSafe(InputMappingContext));
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("[Input] IMC is missing on %s."),
-						*GetNameSafe(this));
+					UE_LOG(LogTemp, Error, TEXT("[Input] IMC is missing on %s."),*GetNameSafe(this));
 				}
 			}
 			else
@@ -51,6 +48,14 @@ void AEonBound_PlayerControler::BeginPlay()
 			UE_LOG(LogTemp, Error, TEXT("[Input] LocalPlayer is missing."));
 		}
 	}
+	
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+	
 }
 
 void AEonBound_PlayerControler::SetupInputComponent()
@@ -62,13 +67,20 @@ void AEonBound_PlayerControler::SetupInputComponent()
 		if (BasicAttackAction)
 		{
 			EnhancedInputComponent->BindAction(BasicAttackAction,ETriggerEvent::Started,this,&AEonBound_PlayerControler::HandleBasicAttack);
-			UE_LOG(LogTemp, Warning, TEXT("[Input] IA_BasicAttack bound: %s"),
-				*GetNameSafe(BasicAttackAction));
+			UE_LOG(LogTemp, Warning, TEXT("[Input] IA_BasicAttack bound: %s"),*GetNameSafe(BasicAttackAction));
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("[Input] IA_BasicAttack is missing on %s."),
-				*GetNameSafe(this));
+			UE_LOG(LogTemp, Error, TEXT("[Input] IA_BasicAttack is missing on %s."),*GetNameSafe(this));
+		}
+		if (InteractAction)
+		{
+			EnhancedInputComponent->BindAction(InteractAction,ETriggerEvent::Started,this,&AEonBound_PlayerControler::HandleInteract);
+			UE_LOG(LogTemp, Warning, TEXT("[Input] IA_Interact bound: %s"),*GetNameSafe(InteractAction));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[Input] IA_Interact is missing on %s."),*GetNameSafe(this));
 		}
 	}
 	else
@@ -80,40 +92,58 @@ void AEonBound_PlayerControler::SetupInputComponent()
 void AEonBound_PlayerControler::HandleBasicAttack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("[Input] IA_BasicAttack triggered."));
-
-	if (!GetWorld())
-	{
-		UE_LOG(LogTemp, Error, TEXT("[Input] HandleBasicAttack failed: World is missing."));
-		return;
-	}
-
-	AEonBound_GameMode* GM = GetWorld()->GetAuthGameMode<AEonBound_GameMode>();
-
-	if (!GM)
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("[Input] HandleBasicAttack blocked: AuthGameMode is missing. Controller authority: %s."),
-			HasAuthority() ? TEXT("true") : TEXT("false"));
-		return;
-	}
-
-	UEonBound_CombatManager* Manager = GM->GetCombatManager();
-
+	
 	if (!Manager)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[Input] HandleBasicAttack blocked: CombatManager is missing."));
 		return;
 	}
-
-	AActor* Target = Manager->PlayerTarget;
-	if (!Target)
+	
+	UE_LOG(LogTemp, Warning, TEXT("[Input] Requesting basic attack. Target: %s"),*GetNameSafe(Manager->PlayerTarget));
+	
+	AEonBound_Character* EnemyTargeted = Manager->PlayerTarget;
+	if (EnemyTargeted != nullptr)
 	{
-		UE_LOG(LogTemp, Error,
-			TEXT("[Input] HandleBasicAttack blocked: no living enemy target was found."));
+		Manager->RequestPlayerBasicAttack(EnemyTargeted);
+	}
+}
+
+void AEonBound_PlayerControler::HandleInteract()
+{
+	FHitResult HitResultCursor;
+	
+	if (GetHitResultUnderCursor(ECC_GameTraceChannel1,true,HitResultCursor) && IsValid(Manager))
+	{
+		AActor* HitTarget = HitResultCursor.GetActor();
+
+		if (AEonBound_Character* HitCharacter = Cast<AEonBound_Character>(HitTarget))
+		{
+			CursorTarget = HitCharacter;
+
+			Manager->SetSelectedTarget(CursorTarget);
+
+			UE_LOG(LogTemp, Warning, TEXT("[Input] Targeting character: %s"), *GetNameSafe(CursorTarget));
+		}
+	}
+}
+
+void AEonBound_PlayerControler::SetCameraActor(ACameraActor* NewCameraActor)
+{
+	if (!NewCameraActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Camera] SetCameraActor failed: NewCameraActor is null."));
 		return;
 	}
+	
+	CameraActor = NewCameraActor;
+	
+	if (CameraActor != nullptr)
+	{
+		SetViewTarget(CameraActor);
+	}
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("[Input] Requesting basic attack. Target: %s"),
-		*GetNameSafe(Target));
-	Manager->RequestPlayerBasicAttack(Target);
+ACameraActor* AEonBound_PlayerControler::GetCameraActor() const
+{
+	return CameraActor;
 }

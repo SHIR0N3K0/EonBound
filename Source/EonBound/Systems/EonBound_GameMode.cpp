@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "EonBound_GameMode.h"
+
+#include "EonBound_PlayerControler.h"
 #include "EonBound/Character/EonBound_PlayerCharacter.h"
 #include "EonBound/Character/EonBound_EnemyCharacter.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
@@ -19,6 +21,26 @@ void AEonBound_GameMode::StartPlay()
 	Super::StartPlay();
 	
 	CombatManager = NewObject<UEonBound_CombatManager>(this);
+	
+	if (!IsValid(CombatManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[GameMode] CombatManager creation failed."));
+		return;
+	}
+
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+
+	EonBound_PC = Cast<AEonBound_PlayerControler>(PlayerController);
+
+	if (!IsValid(EonBound_PC))
+	{
+		UE_LOG(LogTemp, Error,TEXT("[GameMode] PlayerController is invalid or has the wrong class. Actual: %s"),
+			*GetNameSafe(PlayerController));
+		return;
+	}
+
+	EonBound_PC->SetManagerREF(CombatManager);
+	
 	
 	SpawnTestCombatants();
 	
@@ -51,11 +73,10 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		for (int32 i = 0; i < 2; i++)
+		for (int32 i = 0; i < 1; i++)
 		{
 			SpawnedTestAlly = World->SpawnActor<AEonBound_PlayerCharacter>(TestAllyClass,TestAllySpawnTransform,SpawnParams);
 			CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
-
 			if (SpawnedTestAlly)
 			{
 				UE_LOG(LogTemp,Log,TEXT("Allie spawn : %s"),*SpawnedTestAlly->GetName());
@@ -76,6 +97,7 @@ void AEonBound_GameMode::SpawnTestCombatants()
 			CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
 			if (SpawnedTestEnemy)
 			{
+				SpawnedTestEnemy->SetTargetIndicationVisibility(false);
 				UE_LOG(LogTemp,Log,TEXT("Ennemi spawn : %s"),*SpawnedTestEnemy->GetName());
 			}
 		}

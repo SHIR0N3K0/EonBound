@@ -18,5 +18,6 @@ void AEonBound_EnemyCharacter::BeginPlay()
 	if (UEonBound_AbilitySystemComponent* ASC = EonBound_ASC)
 	{
 		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetSpeedAttribute(),50.0f);
+		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetAttackAttribute(),20.0f);
 	}
 }

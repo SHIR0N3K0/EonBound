@@ -29,6 +29,10 @@ public:
 	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, HealthMax);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CustomAbilitySystemComponent, Replicated)
+	FGameplayAttributeData Attack;
+	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, Attack);
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CustomAbilitySystemComponent, Replicated)
 	FGameplayAttributeData Defense;
 	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, Defense);
 	

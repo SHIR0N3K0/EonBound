@@ -13,6 +13,8 @@ class UEonBound_AttributeSet;
 class UEonBound_CombatComponent;
 class UGameplayAbility;
 class UEonBound_CombatManager;
+class UFocusUserWidget;
+class UWidgetComponent;
 
 UCLASS()
 class EONBOUND_API AEonBound_Character : public ACharacter, public IAbilitySystemInterface
@@ -41,9 +43,17 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
+protected:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TSubclassOf<UGameplayAbility> BasicAttackAbility;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UFocusUserWidget> FocusWidgetClass;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UWidgetComponent> FocusWidget;
 
+public:
 	void SetCombatManager(UEonBound_CombatManager* InCombatManager);
 	
 	UEonBound_CombatManager* GetCombatManager() const
@@ -64,5 +74,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool TryBasicAttack();
+	
+	void SetTargetIndicationVisibility(bool bVisible);
 	
 };

@@ -25,7 +25,7 @@ public:
 	void StartCombat();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void RequestPlayerBasicAttack(AActor* Target);
+	void RequestPlayerBasicAttack(AEonBound_Character* Target);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void NotifyActionFinished();
@@ -41,10 +41,10 @@ protected:
 	EEonBound_CombatState CombatState = EEonBound_CombatState::Preparing;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	TObjectPtr<AActor> ActiveCombatant;
+	TObjectPtr<AEonBound_Character> ActiveCombatant;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<AActor>> TurnOrder;
+	TArray<TObjectPtr<AEonBound_Character>> TurnOrder;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
 	int32 CurrentTurnIndex = 0;
@@ -52,23 +52,30 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
 	int32 RoundNumber = 1;
 	
+	// Timer handle to delay the start of the next turn after an action is finished.
+	FTimerHandle DelayTimerHandle;
+	
+	void OnDelayTimerFinished();
+	
 	
 public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
-	TArray<TObjectPtr<AActor>> PlayerCombatants;
+	TArray<TObjectPtr<AEonBound_Character>> PlayerCombatants;
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
-	TArray<TObjectPtr<AActor>> EnemyCombatants;
+	TArray<TObjectPtr<AEonBound_Character>> EnemyCombatants;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	TObjectPtr<AActor> PlayerTarget;
+	TObjectPtr<AEonBound_Character> PlayerTarget;
+	
+	void SetSelectedTarget(AEonBound_Character* NewTarget);
 
 private:
 	void SetCombatState(EEonBound_CombatState NewState);
 	void StartEnemyTurn();
-	bool IsCombatantAlive(AActor* Combatant) const;
+	bool IsCombatantAlive(AEonBound_Character* Combatant) const;
 	void BuildTurnOrder();
 	float GetCombatantSpeed(AEonBound_Character* Combatant) const;
 	void AdvanceTurn();
-	void StartCurrentTurn();
+	void StartCurrentTurn(bool bIsNewRound = false);
 };

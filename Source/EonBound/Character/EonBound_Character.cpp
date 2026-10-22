@@ -3,6 +3,8 @@
 
 #include "EonBound_Character.h"
 #include "AbilitySystemComponent.h"
+#include "EonBound/UI/FocusUserWidget.h"
+#include "Components/WidgetComponent.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
 #include "EonBound/GAS/EonBound_AbilitySystemComponent.h"
 #include "EonBound/GAS/EonBound_AttributeSet.h"
@@ -14,7 +16,7 @@ AEonBound_Character::AEonBound_Character()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't 
  	// need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	
 	EonBound_ASC = CreateDefaultSubobject<UEonBound_AbilitySystemComponent>("EonBound_ASC");
 	EonBound_ASC->SetIsReplicated(true);
@@ -23,6 +25,11 @@ AEonBound_Character::AEonBound_Character()
 	EonBound_AttributeSet = CreateDefaultSubobject<UEonBound_AttributeSet>("EonBound_AttributeSet");
 	
 	BasicAttackAbility = UEonBound_GA_NormalAttack::StaticClass();
+	
+	FocusWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("FocusWidget"));
+	FocusWidget->SetupAttachment(RootComponent);
+
+	
 }
 
 // Called when the game starts or when spawned
@@ -36,13 +43,16 @@ void AEonBound_Character::BeginPlay()
 		//InitializeDefaultAttributes();
 		GiveInitialAbilities();
 	}
+	
+	if (FocusWidgetClass)
+	{
+		FocusWidget->SetWidgetClass(FocusWidgetClass);
+	}
 }
 
-// Called every frame
 void AEonBound_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -95,6 +105,14 @@ bool AEonBound_Character::TryBasicAttack()
 		UE_LOG(LogTemp, Warning,TEXT("Basic attack ability activation failed. Check that the ability is granted, has the tag Ability.BasicAttack, and is not blocked."));
 	}
 	return bActivated;
+}
+
+void AEonBound_Character::SetTargetIndicationVisibility(bool bVisible)
+{
+	if (FocusWidget)
+	{
+		FocusWidget->SetVisibility(bVisible);
+	}
 }
 
 //TEMPORARY: Set the default value of the Chara using a Gameplay Effect

@@ -27,8 +27,7 @@ private:
 	TObjectPtr<AEonBound_PlayerControler> EonBound_PC;
 	
 public:
-		UPROPERTY(Transient)
-	TObjectPtr<UEonBound_CombatManager> CombatManager;
+
 	TObjectPtr<UEonBound_CombatManager> GetCombatManager() const;
 	
 	virtual void StartPlay() override;
@@ -54,5 +53,8 @@ protected:
 	TObjectPtr<AEonBound_EnemyCharacter> SpawnedTestEnemy;
 	
 	void SpawnTestCombatants();
+	
+	UPROPERTY()
+	TObjectPtr<UEonBound_CombatManager> CombatManager;
 	
 };

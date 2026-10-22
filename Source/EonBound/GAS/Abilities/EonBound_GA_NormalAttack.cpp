@@ -5,6 +5,8 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "EonBound/GAS/Effects/EonBound_GE_Attack.h"
 #include "AbilitySystemComponent.h"
+#include "EonBound/GAS/EonBound_AttributeSet.h"	
+#include "GameplayTagContainer.h"
 #include "EonBound/Character/EonBound_Character.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
 
@@ -26,31 +28,34 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	// Vérifie que l'ability possède bien les informations nécessaires pour s'exécuter.
 	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid())
 	{
-		EndAbility(Handle, ActorInfo, ActivationInfo,
-			true, true);
+		EndAbility(Handle, ActorInfo, ActivationInfo,true, true);
 		return;
 	}
 	
 	
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
-		EndAbility(
-			Handle,
-			ActorInfo,
-			ActivationInfo,
-			true,
-			true
-		);
+		EndAbility(Handle,ActorInfo,ActivationInfo,true,true);
 		return;
 	}
 	
+	// ASC de l'attaquant
+
+	const float Attack = ActorInfo->AbilitySystemComponent->GetNumericAttribute(UEonBound_AttributeSet::GetAttackAttribute());
+
+	const float CritRate = FMath::Clamp(ActorInfo->AbilitySystemComponent->GetNumericAttribute(UEonBound_AttributeSet::GetCritChanceAttribute()),
+		0.f, 100.f);
+
+	const float CritDamage = FMath::Max(ActorInfo->AbilitySystemComponent->GetNumericAttribute(UEonBound_AttributeSet::GetCritDamageAttribute()),
+		0.f);
+
+	
 	// Récupère l'attaquant, sa cible actuelle et l'effet de dégâts à appliquer.
-	AEonBound_Character* Attacker =Cast<AEonBound_Character>(ActorInfo->AvatarActor.Get());
+	AEonBound_Character* Attacker = Cast<AEonBound_Character>(ActorInfo->AvatarActor.Get());
 
 	if (!Attacker || !Attacker->CurrentTarget ||!DamageEffectClass)
 	{
-		EndAbility(Handle, ActorInfo, ActivationInfo,
-			true, true);
+		EndAbility(Handle, ActorInfo, ActivationInfo,true, true);
 		return;
 	}
 
@@ -70,11 +75,25 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 		UE_LOG(LogTemp, Error, TEXT("DamageEffectClass is not assigned."));
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Attacker: %s | Target: %s | HasAuthority: %s"),
-		*GetNameSafe(Attacker),
+	UE_LOG(LogTemp, Warning, TEXT("Attacker: %s | Target: %s | HasAuthority: %s"),*GetNameSafe(Attacker),
 		*GetNameSafe(Attacker ? Attacker->CurrentTarget : nullptr),
 		Attacker && Attacker->HasAuthority() ? TEXT("true") : TEXT("false"));
-	//TEST
+
+	// Un seul tirage par attaque.
+	const bool bIsCritical = FMath::FRandRange(0.0f, 100.0f) < CritRate;
+
+	// Le DC représente le bonus de dégâts critiques.
+	const float FinalDamage = Attack *
+		(bIsCritical ? CritDamage/100.0f : 1.f);
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Combat] Attack: %.2f | TC: %.2f%% | DC: %.2f%% | Critical: %s | Damage: %.2f"),
+		Attack,
+		CritRate,
+		CritDamage,
+		bIsCritical ? TEXT("YES") : TEXT("NO"),
+		FinalDamage
+	);
 
 	// L'effet gameplay est créé et appliqué uniquement côté serveur.
 	if (Attacker->HasAuthority())
@@ -87,6 +106,8 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 
 		if (Spec.IsValid())
 		{
+			const FGameplayTag DamageTag = FGameplayTag::RequestGameplayTag(FName("Data.Damage"));
+			Spec.Data->SetSetByCallerMagnitude(DamageTag,FinalDamage);
 			TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 		}
 	}
