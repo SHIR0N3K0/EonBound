@@ -70,7 +70,7 @@ public:
 	void GiveInitialAbilities();
 	
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite,Category = "Combat")
-	TObjectPtr<AActor> CurrentTarget;
+	TObjectPtr<AActor> CurrentActionTarget;
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool TryBasicAttack();

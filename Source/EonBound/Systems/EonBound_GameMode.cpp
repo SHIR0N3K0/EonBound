@@ -91,7 +91,7 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		for (int32 i = 0; i < 2; i++)
+		for (int32 i = 0; i < 3; i++)
 		{
 			SpawnedTestEnemy = World->SpawnActor<AEonBound_EnemyCharacter>(TestEnemyClass,TestEnemySpawnTransform,SpawnParams);
 			CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);

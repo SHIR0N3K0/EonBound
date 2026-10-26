@@ -69,13 +69,13 @@ void UEonBound_CombatManager::StartCombat()
 	StartCurrentTurn(true);
 }
 
-void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Target)
+void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* AttackTarget)
 {
 	UE_LOG(LogTemp, Warning,
 		TEXT("[Combat] RequestPlayerBasicAttack called. State: %s | Active: %s | Target: %s | Enemies: %d"),
 		*UEnum::GetValueAsString(CombatState),
 		*GetNameSafe(ActiveCombatant),
-		*GetNameSafe(Target),
+		*GetNameSafe(AttackTarget),
 		EnemyCombatants.Num());
 
 	// Vérifie que le combat est en cours et que c'est bien le tour du joueur.
@@ -94,20 +94,21 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Targ
 		return;
 	}
 
-	if (!IsValid(Target))
+	if (!IsValid(AttackTarget))
 	{
 		UE_LOG(LogTemp, Error, TEXT("[Combat] Attack blocked: Target is invalid."));
 		return;
 	}
 
-	if (!IsCombatantAlive(Target))
+	if (!IsCombatantAlive(AttackTarget))
 	{
 		UE_LOG(LogTemp, Error, TEXT("[Combat] Attack blocked: Target is dead or has no valid GAS health."));
+		for (AEonBound_Character* Enemy : EnemyCombatants)
 		return;
 	}
 	
 	// Vérifie que la cible est bien un ennemi.
-	if (!EnemyCombatants.Contains(Target))
+	if (!EnemyCombatants.Contains(AttackTarget))
 	{
 		UE_LOG(LogTemp, Error, TEXT("[Combat] Attack blocked: Target is not in EnemyCombatants."));
 		return;
@@ -126,7 +127,7 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Targ
 
 	SetCombatState(EEonBound_CombatState::ExecutingAction);
 	
-	Attacker->CurrentTarget = Target;
+	Attacker->CurrentActionTarget = AttackTarget;
 	
 	if (!Attacker->TryBasicAttack())
 	{
@@ -134,7 +135,7 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Targ
 
 		SetCombatState(EEonBound_CombatState::PlayerTurn);
 	}
-	else if (AEonBound_Character* TargetCharacter = Cast<AEonBound_Character>(Target))
+	else if (AEonBound_Character* TargetCharacter = Cast<AEonBound_Character>(AttackTarget))
 	{
 		TargetCharacter->SetTargetIndicationVisibility(false);
 	}
@@ -157,6 +158,12 @@ void UEonBound_CombatManager::NotifyActionFinished()
 	if (CombatState == EEonBound_CombatState::Victory || CombatState == EEonBound_CombatState::Defeat)
 	{
 		return;
+	}
+	
+	// Si la cible est morte, choisir un autre ennemi vivant.
+	if (!IsCombatantAlive(SelectedEnemyTarget))
+	{
+		SelectFirstLivingEnemy();
 	}
 
 	// Le tour suivant est préparé.	
@@ -212,31 +219,42 @@ EEonBound_CombatState UEonBound_CombatManager::GetCombatState() const
 	return CombatState;
 }
 
-void UEonBound_CombatManager::SetSelectedTarget(AEonBound_Character* NewTarget)
+void UEonBound_CombatManager::SetSelectedTarget(AEonBound_Character* RequestedTarget)
 {
-	if (CombatState == EEonBound_CombatState::PlayerTurn)
+	if (CombatState != EEonBound_CombatState::PlayerTurn)
 	{
-		// Vérifie si la nouvelle cible est différente de la cible actuelle.
-		if (PlayerTarget == NewTarget)
+		return;
+	}
+	
+	// Si la cible demandée est invalide, morte ou n'est pas un ennemi,
+	// conserver la sélection actuelle si elle est encore valide.
+	if (!IsValid(RequestedTarget) || !EnemyCombatants.Contains(RequestedTarget) || !IsCombatantAlive(RequestedTarget))
+	{
+		if (IsValid(SelectedEnemyTarget) && EnemyCombatants.Contains(SelectedEnemyTarget) && IsCombatantAlive(SelectedEnemyTarget))
 		{
 			return;
 		}
 
+		// La sélection actuelle n'est plus valide : trouver un remplaçant.
+		SelectFirstLivingEnemy();
+		return;
+	}
+		
+		// Ne rien faire si la cible est déjà sélectionnée.
+	if (SelectedEnemyTarget == RequestedTarget)
+	{
+		return;
+	}
+		
 		// Met à jour la visibilité de l'indication de ciblage pour l'ancienne cible.
-		if (IsValid(PlayerTarget))
-		{
-			PlayerTarget->SetTargetIndicationVisibility(false);
-		}
+	if (IsValid(SelectedEnemyTarget))
+	{
+		SelectedEnemyTarget->SetTargetIndicationVisibility(false);
+	}
 
 		// Met à jour la cible actuelle.
-		PlayerTarget = NewTarget;
-
-		// Met à jour la visibilité de l'indication de ciblage pour la nouvelle cible.
-		if (IsValid(PlayerTarget))
-		{
-			PlayerTarget->SetTargetIndicationVisibility(true);
-		}
-	}
+	SelectedEnemyTarget = RequestedTarget;
+	SelectedEnemyTarget->SetTargetIndicationVisibility(true);
 }
 
 void UEonBound_CombatManager::SetCombatState(EEonBound_CombatState NewState)
@@ -283,7 +301,7 @@ void UEonBound_CombatManager::StartEnemyTurn()
 		return;
 	}
 
-	Attacker->CurrentTarget = Target;
+	Attacker->CurrentActionTarget = Target;
 	SetCombatState(EEonBound_CombatState::ExecutingAction);
 	
 	if (!Attacker->TryBasicAttack())
@@ -482,10 +500,10 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 	{
 		SetCombatState(EEonBound_CombatState::PlayerTurn);
 
-		if (bIsNewRound or IsCombatantAlive(PlayerTarget) == false)
+		if (bIsNewRound or IsCombatantAlive(SelectedEnemyTarget) == false)
 		{
 			// Préparer la cible par défaut du joueur.
-			PlayerTarget = nullptr;
+			SelectedEnemyTarget = nullptr;
 
 			for (AEonBound_Character* Enemy : EnemyCombatants)
 			{
@@ -498,7 +516,7 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 		}
 		else
 		{
-			PlayerTarget->SetTargetIndicationVisibility(true);
+			SelectedEnemyTarget->SetTargetIndicationVisibility(true);
 		}
 
 		UE_LOG(LogTemp, Warning,TEXT("[Turn] Player turn: %s | Round: %d"),*GetNameSafe(ActiveCombatant),RoundNumber);
@@ -506,6 +524,11 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 	else if (EnemyCombatants.Contains(Combatant))
 	{
 		SetCombatState(EEonBound_CombatState::EnemyTurn);
+		
+		if (IsValid(SelectedEnemyTarget))
+		{
+			SelectedEnemyTarget->SetTargetIndicationVisibility(false);
+		}
 
 		if (bIsNewRound)
 		{
@@ -516,6 +539,27 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 			UE_LOG(LogTemp, Warning,TEXT("[Turn] Enemy turn: %s | Round: %d"),*GetNameSafe(ActiveCombatant),RoundNumber);
 
 			StartEnemyTurn();
+		}
+	}
+}
+
+void UEonBound_CombatManager::SelectFirstLivingEnemy()
+{
+	// Masquer l'indicateur de la cible précédente.
+	if (IsValid(SelectedEnemyTarget))
+	{
+		SelectedEnemyTarget->SetTargetIndicationVisibility(false);
+	}
+
+	SelectedEnemyTarget = nullptr;
+
+	// Sélectionner le premier ennemi vivant.
+	for (AEonBound_Character* Enemy : EnemyCombatants)
+	{
+		if (IsValid(Enemy) && IsCombatantAlive(Enemy))
+		{
+			SelectedEnemyTarget = Enemy;
+			return;
 		}
 	}
 }

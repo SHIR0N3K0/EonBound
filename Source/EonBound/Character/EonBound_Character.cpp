@@ -87,7 +87,7 @@ void AEonBound_Character::GiveInitialAbilities()
 
 bool AEonBound_Character::TryBasicAttack()
 {
-	if (!CurrentTarget || !EonBound_ASC)
+	if (!CurrentActionTarget || !EonBound_ASC)
 	{
 		return false;
 	}

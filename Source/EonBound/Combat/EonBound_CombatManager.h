@@ -25,7 +25,7 @@ public:
 	void StartCombat();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void RequestPlayerBasicAttack(AEonBound_Character* Target);
+	void RequestPlayerBasicAttack(AEonBound_Character* AttackTarget);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void NotifyActionFinished();
@@ -66,9 +66,9 @@ public:
 	TArray<TObjectPtr<AEonBound_Character>> EnemyCombatants;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	TObjectPtr<AEonBound_Character> PlayerTarget;
+	TObjectPtr<AEonBound_Character> SelectedEnemyTarget;
 	
-	void SetSelectedTarget(AEonBound_Character* NewTarget);
+	void SetSelectedTarget(AEonBound_Character* RequestedTarget);
 
 private:
 	void SetCombatState(EEonBound_CombatState NewState);
@@ -78,4 +78,5 @@ private:
 	float GetCombatantSpeed(AEonBound_Character* Combatant) const;
 	void AdvanceTurn();
 	void StartCurrentTurn(bool bIsNewRound = false);
+	void SelectFirstLivingEnemy();
 };

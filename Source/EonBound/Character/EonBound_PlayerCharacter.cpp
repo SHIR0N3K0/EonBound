@@ -18,6 +18,8 @@ void AEonBound_PlayerCharacter::BeginPlay()
 	if (UEonBound_AbilitySystemComponent* ASC = EonBound_ASC)
 	{
 		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetSpeedAttribute(),100.0f);
-		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetAttackAttribute(),40.0f);
+		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetAttackAttribute(),60.0f);
+		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetHealthAttribute(),200.0f);
+		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetHealthMaxAttribute(),200.0f);
 	}
 }

@@ -53,14 +53,14 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	// Récupère l'attaquant, sa cible actuelle et l'effet de dégâts à appliquer.
 	AEonBound_Character* Attacker = Cast<AEonBound_Character>(ActorInfo->AvatarActor.Get());
 
-	if (!Attacker || !Attacker->CurrentTarget ||!DamageEffectClass)
+	if (!Attacker || !Attacker->CurrentActionTarget ||!DamageEffectClass)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo,true, true);
 		return;
 	}
 
 	// Récupère le composant GAS de la cible afin de pouvoir lui appliquer les dégâts.
-	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker->CurrentTarget);
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker->CurrentActionTarget);
 
 	if (!TargetASC)
 	{
@@ -76,7 +76,7 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Attacker: %s | Target: %s | HasAuthority: %s"),*GetNameSafe(Attacker),
-		*GetNameSafe(Attacker ? Attacker->CurrentTarget : nullptr),
+		*GetNameSafe(Attacker ? Attacker->CurrentActionTarget : nullptr),
 		Attacker && Attacker->HasAuthority() ? TEXT("true") : TEXT("false"));
 
 	// Un seul tirage par attaque.

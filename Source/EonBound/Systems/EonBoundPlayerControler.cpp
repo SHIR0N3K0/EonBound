@@ -99,9 +99,9 @@ void AEonBound_PlayerControler::HandleBasicAttack()
 		return;
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("[Input] Requesting basic attack. Target: %s"),*GetNameSafe(Manager->PlayerTarget));
+	UE_LOG(LogTemp, Warning, TEXT("[Input] Requesting basic attack. Target: %s"),*GetNameSafe(Manager->SelectedEnemyTarget));
 	
-	AEonBound_Character* EnemyTargeted = Manager->PlayerTarget;
+	AEonBound_Character* EnemyTargeted = Manager->SelectedEnemyTarget;
 	if (EnemyTargeted != nullptr)
 	{
 		Manager->RequestPlayerBasicAttack(EnemyTargeted);
