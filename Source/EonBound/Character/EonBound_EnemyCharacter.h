@@ -6,6 +6,8 @@
 #include "EonBound_Character.h"
 #include "EonBound_EnemyCharacter.generated.h"
 
+class UWidgetComponent;
+class UEnemyStatut_UserWidget;
 /**
  * 
  */
@@ -18,5 +20,14 @@ public:
 	AEonBound_EnemyCharacter();
 	
 	virtual void BeginPlay() override;
+	
+	bool bIsBoss = false;
+	
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UWidgetComponent> EnemyLifeBarWidgetComponent;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UEnemyStatut_UserWidget> EnemyLifeBarWidgetClass;
 	
 };

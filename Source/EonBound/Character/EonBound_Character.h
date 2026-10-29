@@ -43,6 +43,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TSubclassOf<UGameplayAbility> BasicAttackAbility;
@@ -52,6 +54,8 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UWidgetComponent> FocusWidget;
+	
+	bool bIsDead = false;
 
 public:
 	void SetCombatManager(UEonBound_CombatManager* InCombatManager);
@@ -76,5 +80,11 @@ public:
 	bool TryBasicAttack();
 	
 	void SetTargetIndicationVisibility(bool bVisible);
+	
+	void HandleDeath();
+	
+	bool IsDead() const { return bIsDead; }
+	
+	FDelegateHandle HealthChangedHandle;
 	
 };

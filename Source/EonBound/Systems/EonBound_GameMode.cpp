@@ -6,6 +6,7 @@
 #include "EonBound/Character/EonBound_PlayerCharacter.h"
 #include "EonBound/Character/EonBound_EnemyCharacter.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
+#include "EonBound/UI/CombatHUD_UserWidget.h"
 
 AEonBound_GameMode::AEonBound_GameMode()
 {	
@@ -27,6 +28,14 @@ void AEonBound_GameMode::StartPlay()
 		UE_LOG(LogTemp, Error, TEXT("[GameMode] CombatManager creation failed."));
 		return;
 	}
+	
+	if (!IsValid(CombatHUDClassToGiveToManager))
+	{
+		UE_LOG(LogTemp, Error, TEXT("[GameMode] CombatHUDClassToGiveToManager is not assigned."));
+		return;
+	}
+	
+	CombatManager->CombatHUDClass = CombatHUDClassToGiveToManager;
 
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 
@@ -73,7 +82,7 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		for (int32 i = 0; i < 1; i++)
+		for (int32 i = 0; i < 2; i++)
 		{
 			SpawnedTestAlly = World->SpawnActor<AEonBound_PlayerCharacter>(TestAllyClass,TestAllySpawnTransform,SpawnParams);
 			CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
@@ -91,7 +100,7 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		for (int32 i = 0; i < 3; i++)
+		for (int32 i = 0; i < 4; i++)
 		{
 			SpawnedTestEnemy = World->SpawnActor<AEonBound_EnemyCharacter>(TestEnemyClass,TestEnemySpawnTransform,SpawnParams);
 			CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);

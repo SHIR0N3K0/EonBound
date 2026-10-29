@@ -16,7 +16,7 @@ UEonBound_AttributeSet::UEonBound_AttributeSet()
 	InitATB(1);
 	InitEnergy(100);
 	InitDamage(0);
-	InitBalancingCoefficient(100);
+	InitBalancingCoefficient(150);
 	InitCritChance(10);
 	InitCritDamage(120);
 }

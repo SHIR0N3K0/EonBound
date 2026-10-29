@@ -7,6 +7,8 @@
 #include "AbilitySystemComponent.h"
 #include "EonBound/Character/EonBound_Character.h"
 #include "EonBound/GAS/EonBound_AttributeSet.h"
+#include "EonBound/UI/CombatHUD_UserWidget.h"
+#include "GameFramework/PlayerController.h"
 
 
 UEonBound_CombatManager::UEonBound_CombatManager()
@@ -53,6 +55,46 @@ void UEonBound_CombatManager::StartCombat()
 			Character->SetCombatManager(this);
 		}
 	}
+	
+	// Création du HUD de combat
+	if (!IsValid(CombatHUD))
+	{
+		if (!CombatHUDClass)
+		{
+			UE_LOG(LogTemp, Error, TEXT("CombatHUDClass is not assigned in game mode."));
+			return;
+		}
+
+		UWorld* World = GetWorld();
+
+		if (!IsValid(World))
+		{
+			UE_LOG(LogTemp, Error, TEXT("CombatManager has no valid World."));
+			return;
+		}
+
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+
+		if (!IsValid(PlayerController))
+		{
+			UE_LOG(LogTemp, Error, TEXT("No valid PlayerController."));
+			return;
+		}
+
+		CombatHUD = CreateWidget<UCombatHUD_UserWidget>(PlayerController,CombatHUDClass);
+
+		if (!IsValid(CombatHUD))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create CombatHUD."));
+			return;
+		}
+
+		CombatHUD->AddToViewport();
+	}
+
+	// Création et initialisation d'un statut par personnage allié
+	CombatHUD->InitializePlayerStatuses(PlayerCombatants);
+	CombatHUD->CombatManagerRef = this;
 	
 	BuildTurnOrder();
 
@@ -103,7 +145,6 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Atta
 	if (!IsCombatantAlive(AttackTarget))
 	{
 		UE_LOG(LogTemp, Error, TEXT("[Combat] Attack blocked: Target is dead or has no valid GAS health."));
-		for (AEonBound_Character* Enemy : EnemyCombatants)
 		return;
 	}
 	
@@ -141,6 +182,11 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Atta
 	}
 	FString AttackerName = Attacker->GetName();
 	UE_LOG(LogTemp, Error, TEXT("The attacker is %s"), *AttackerName);
+	
+	if (CombatHUD)
+	{
+		CombatHUD->SetButtonVisibility(ECombatHUDState::Basic,false);
+	}
 
 }
 
@@ -318,7 +364,7 @@ void UEonBound_CombatManager::StartEnemyTurn()
 bool UEonBound_CombatManager::IsCombatantAlive(AEonBound_Character* Combatant) const
 {
 	// Vérifie que le combattant est valide et possède un composant GAS.
-	if (!IsValid(Combatant))
+	if (!IsValid(Combatant) || Combatant->IsDead())
 	{
 		return false;
 	}
@@ -499,6 +545,11 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 	if (PlayerCombatants.Contains(Combatant))
 	{
 		SetCombatState(EEonBound_CombatState::PlayerTurn);
+		
+		if (CombatHUD)
+		{
+			CombatHUD->SetButtonVisibility(ECombatHUDState::Basic,true);
+		}
 
 		if (bIsNewRound or IsCombatantAlive(SelectedEnemyTarget) == false)
 		{

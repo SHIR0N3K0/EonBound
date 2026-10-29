@@ -43,5 +43,5 @@ struct FCombatantState
 	bool CanAct = false;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int32 TurnIndex;
+	int32 TurnIndex = 0;
 };

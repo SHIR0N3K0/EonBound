@@ -10,6 +10,7 @@ class AEonBound_PlayerCharacter;
 class AEonBound_EnemyCharacter;
 class AEonBound_PlayerControler;
 class UEonBound_CombatManager;
+class UCombatHUD_UserWidget;
 /**
  * 
  */
@@ -31,6 +32,9 @@ public:
 	TObjectPtr<UEonBound_CombatManager> GetCombatManager() const;
 	
 	virtual void StartPlay() override;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|UI")
+	TSubclassOf<UCombatHUD_UserWidget> CombatHUDClassToGiveToManager;
 	
 protected:
 	

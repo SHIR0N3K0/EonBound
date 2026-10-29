@@ -9,6 +9,8 @@
 
 class UEonBound_CombatComponent;
 class AEonBound_Character;
+class UCombatHUD_UserWidget;
+class APlayerController;
 
 /**
  * 
@@ -35,6 +37,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Combat")
 	EEonBound_CombatState GetCombatState() const;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|UI")
+	TSubclassOf<UCombatHUD_UserWidget> CombatHUDClass;
+
+	UPROPERTY()
+	TObjectPtr<UCombatHUD_UserWidget> CombatHUD;
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
@@ -69,6 +77,12 @@ public:
 	TObjectPtr<AEonBound_Character> SelectedEnemyTarget;
 	
 	void SetSelectedTarget(AEonBound_Character* RequestedTarget);
+	
+	UPROPERTY()
+	int32 CurrentWaveIndex = 0;
+
+	UPROPERTY()
+	int32 TotalWaves = 1;
 
 private:
 	void SetCombatState(EEonBound_CombatState NewState);

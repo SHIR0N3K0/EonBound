@@ -40,8 +40,17 @@ void AEonBound_Character::BeginPlay()
 	if (EonBound_ASC)
 	{
 		EonBound_ASC->InitAbilityActorInfo(this, this);
-		//InitializeDefaultAttributes();
-		GiveInitialAbilities();
+		InitializeDefaultAttributes();
+				
+		HealthChangedHandle = EonBound_ASC->GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetHealthAttribute())
+			.AddWeakLambda(this,[this](const FOnAttributeChangeData& Data)
+			{
+				if (Data.NewValue <= 0.f)
+				{
+					HandleDeath();
+				}
+			});
+		
 	}
 	
 	if (FocusWidgetClass)
@@ -65,6 +74,18 @@ void AEonBound_Character::SetupPlayerInputComponent(UInputComponent* PlayerInput
 UAbilitySystemComponent* AEonBound_Character::GetAbilitySystemComponent() const
 {
 	return EonBound_ASC;
+}
+
+void AEonBound_Character::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	
+	if (EonBound_ASC && HealthChangedHandle.IsValid())
+	{
+		EonBound_ASC->GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetHealthAttribute()).Remove(HealthChangedHandle);
+		HealthChangedHandle.Reset();
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void AEonBound_Character::SetCombatManager(UEonBound_CombatManager* InCombatManager)
@@ -113,6 +134,27 @@ void AEonBound_Character::SetTargetIndicationVisibility(bool bVisible)
 	{
 		FocusWidget->SetVisibility(bVisible);
 	}
+}
+
+void AEonBound_Character::HandleDeath()
+{
+	if (bIsDead)
+	{
+		return;
+	}
+	
+	bIsDead = true;
+	
+	// Masquer le personnage
+	SetActorHiddenInGame(true);
+
+	// Empêcher les collisions et les interactions physiques
+	SetActorEnableCollision(false);
+
+	// Arrêter son Tick
+	SetActorTickEnabled(false);
+
+	UE_LOG(LogTemp, Warning,TEXT("[Combat] %s is dead."), *GetName());
 }
 
 //TEMPORARY: Set the default value of the Chara using a Gameplay Effect
