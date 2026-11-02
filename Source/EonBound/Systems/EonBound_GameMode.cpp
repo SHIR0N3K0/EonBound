@@ -7,6 +7,8 @@
 #include "EonBound/Character/EonBound_EnemyCharacter.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
 #include "EonBound/UI/CombatHUD_UserWidget.h"
+#include "EonBound/Combat/EonBound_CombatSpawnPoint.h"
+#include "EngineUtils.h"
 
 AEonBound_GameMode::AEonBound_GameMode()
 {	
@@ -53,17 +55,21 @@ void AEonBound_GameMode::StartPlay()
 	
 	SpawnTestCombatants();
 	
-	if (IsValid(SpawnedTestAlly) && IsValid(SpawnedTestEnemy))
+	if (CombatManager->PlayerCombatants.Num() > 0 &&
+	CombatManager->EnemyCombatants.Num() > 0)
 	{
-		//CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
-		//CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
 		CombatManager->StartCombat();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error,
+			TEXT("[GameMode] Combat cannot start: missing combatants."));
 	}
 }
 
 void AEonBound_GameMode::SpawnTestCombatants()
 {
-	if (!HasAuthority())
+	if (!HasAuthority() || !IsValid(CombatManager))
 	{
 		return;
 	}
@@ -75,44 +81,92 @@ void AEonBound_GameMode::SpawnTestCombatants()
 		return;
 	}
 
-	// Spawn de l'allié
-	if (TestAllyClass)
+	TArray<AEonBound_CombatSpawnPoint*> AllyPoints;
+	TArray<AEonBound_CombatSpawnPoint*> EnemyPoints;
+	
+	for (TActorIterator<AEonBound_CombatSpawnPoint> It(World);It;++It)
 	{
-		FActorSpawnParameters SpawnParams;
+		AEonBound_CombatSpawnPoint* Point = *It;
 
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-		for (int32 i = 0; i < 2; i++)
+		if (!IsValid(Point))
 		{
-			SpawnedTestAlly = World->SpawnActor<AEonBound_PlayerCharacter>(TestAllyClass,TestAllySpawnTransform,SpawnParams);
-			CombatManager->PlayerCombatants.Add(SpawnedTestAlly);
-			if (SpawnedTestAlly)
-			{
-				UE_LOG(LogTemp,Log,TEXT("Allie spawn : %s"),*SpawnedTestAlly->GetName());
-			}
+			continue;
+		}
+
+		switch (Point->Team)
+		{
+		case ECombatSpawnTeam::Ally:AllyPoints.Add(Point);
+			break;
+
+		case ECombatSpawnTeam::Enemy:EnemyPoints.Add(Point);
+			break;
 		}
 	}
 
-	// Spawn de l'ennemi
-	if (TestEnemyClass)
+	// Trier les points de spawn par ordre croissant de SpawnOrder
+	auto SortBySpawnOrder = [](const AEonBound_CombatSpawnPoint& A,const AEonBound_CombatSpawnPoint& B)
 	{
-		FActorSpawnParameters SpawnParams;
+		return A.SpawnOrder < B.SpawnOrder;
+	};
+	
+	AllyPoints.Sort(SortBySpawnOrder);
+	EnemyPoints.Sort(SortBySpawnOrder);
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	
+	// Spawn des alliés.
+	const int32 AllySpawnCount = FMath::Min(TestAllyCount, AllyPoints.Num());
+	
+	 for (int32 i = 0; i < AllySpawnCount; ++i)
+    {
+        if (!TestAllyClass)
+        {
+            UE_LOG(LogTemp, Error,
+                TEXT("[Spawn] TestAllyClass is not assigned."));
+            break;
+        }
 
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+        AEonBound_PlayerCharacter* Ally = World->SpawnActor<AEonBound_PlayerCharacter>(TestAllyClass,AllyPoints[i]->GetActorTransform(),SpawnParams);
 
-		for (int32 i = 0; i < 4; i++)
-		{
-			SpawnedTestEnemy = World->SpawnActor<AEonBound_EnemyCharacter>(TestEnemyClass,TestEnemySpawnTransform,SpawnParams);
-			CombatManager->EnemyCombatants.Add(SpawnedTestEnemy);
-			if (SpawnedTestEnemy)
-			{
-				SpawnedTestEnemy->SetTargetIndicationVisibility(false);
-				UE_LOG(LogTemp,Log,TEXT("Ennemi spawn : %s"),*SpawnedTestEnemy->GetName());
-			}
-		}
-	}
+        if (!IsValid(Ally))
+        {
+            UE_LOG(LogTemp, Error,TEXT("[Spawn] Failed to spawn ally at point %d."),i);
+            continue;
+        }
 
-	// Résumé du résultat
-	UE_LOG(LogTemp,Log,TEXT("Resultat spawn - Allie : %s | Ennemi : %s"),
-		SpawnedTestAlly ? TEXT("OK") : TEXT("ECHEC"),SpawnedTestEnemy ? TEXT("OK") : TEXT("ECHEC"));
+        CombatManager->PlayerCombatants.Add(Ally);
+
+        UE_LOG(LogTemp, Log,TEXT("[Spawn] Ally %s spawned at point %d."),*Ally->GetName(), i);
+    }
+
+    // Spawn des ennemis.
+    const int32 EnemySpawnCount = FMath::Min(TestEnemyCount, EnemyPoints.Num());
+
+    for (int32 i = 0; i < EnemySpawnCount; ++i)
+    {
+        if (!TestEnemyClass)
+        {
+            UE_LOG(LogTemp, Error,TEXT("[Spawn] TestEnemyClass is not assigned."));
+            break;
+        }
+
+        AEonBound_EnemyCharacter* Enemy =
+            World->SpawnActor<AEonBound_EnemyCharacter>(TestEnemyClass,EnemyPoints[i]->GetActorTransform(),SpawnParams);
+
+        if (!IsValid(Enemy))
+        {
+            UE_LOG(LogTemp, Error,TEXT("[Spawn] Failed to spawn enemy at point %d."),i);
+            continue;
+        }
+
+        Enemy->SetTargetIndicationVisibility(false);
+        CombatManager->EnemyCombatants.Add(Enemy);
+
+        UE_LOG(LogTemp, Log,TEXT("[Spawn] Enemy %s spawned at point %d."),*Enemy->GetName(), i);
+    }
+
+    UE_LOG(LogTemp, Log,
+        TEXT("[Spawn] Result: %d/%d allies, %d/%d enemies."),
+			CombatManager->PlayerCombatants.Num(),TestAllyCount,CombatManager->EnemyCombatants.Num(),TestEnemyCount);
 }

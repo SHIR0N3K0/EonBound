@@ -45,16 +45,10 @@ protected:
 	TSubclassOf<AEonBound_EnemyCharacter> TestEnemyClass;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Spawn")
-	FTransform TestAllySpawnTransform;
+	int32 TestAllyCount = 2;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Spawn")
-	FTransform TestEnemySpawnTransform;
-	
-	UPROPERTY(Transient)
-	TObjectPtr<AEonBound_PlayerCharacter> SpawnedTestAlly;
-
-	UPROPERTY(Transient)
-	TObjectPtr<AEonBound_EnemyCharacter> SpawnedTestEnemy;
+	int32 TestEnemyCount = 4;
 	
 	void SpawnTestCombatants();
 	
