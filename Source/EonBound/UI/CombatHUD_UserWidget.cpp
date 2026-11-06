@@ -71,12 +71,22 @@ void UCombatHUD_UserWidget::OnBasicButtonClicked()
 {
 	if (IsValid(CombatManagerRef))
 	{
-		AEonBound_Character* EnemyTargeted = CombatManagerRef->SelectedEnemyTarget;
+		AEonBound_Character* EnemyTargeted = CombatManagerRef->SelectedTarget;
 		if (EnemyTargeted != nullptr)
 		{
 			CombatManagerRef->RequestPlayerBasicAttack(EnemyTargeted);
 		}
 	}
+}
+
+void UCombatHUD_UserWidget::OnSkillButtonClicked()
+{
+	if (!IsValid(CombatManagerRef))
+	{
+		return;
+	}
+
+	CombatManagerRef->ToggleSkillTargeting();
 }
 
 void UCombatHUD_UserWidget::SetButtonVisibility(ECombatHUDState State, bool bIsVisible)
@@ -90,7 +100,10 @@ void UCombatHUD_UserWidget::SetButtonVisibility(ECombatHUDState State, bool bIsV
 		}
 		break;
 	case ECombatHUDState::Skill:
-		// Handle Skill button visibility
+		if (IsValid(Overlay_Skill))
+		{
+			Overlay_Skill->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		}
 		break;
 	case ECombatHUDState::Ult:
 		// Handle Ultimate button visibility

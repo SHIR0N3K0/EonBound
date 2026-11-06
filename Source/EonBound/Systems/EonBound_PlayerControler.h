@@ -28,7 +28,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mapping")
 	TObjectPtr<UInputMappingContext> InputMappingContext;
 
 	UPROPERTY(Transient)
@@ -38,11 +38,16 @@ protected:
 	TObjectPtr<UInputAction> BasicAttackAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> SkillAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
 
 private:
 	void HandleBasicAttack();
+	void HandleSkill();
 	void HandleInteract();
+	void HandleCancel();
 
 	UPROPERTY()
 	TObjectPtr<UEonBound_CombatManager> Manager;
@@ -51,15 +56,18 @@ private:
 	TObjectPtr<AEonBound_Character> CursorTarget;
 	
 public:
+	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 	UFUNCTION(BlueprintCallable, Category = "Camera")
 	void SetCameraActor(ACameraActor* NewCameraActor);
 	
 	UFUNCTION(BlueprintCallable, Category = "Camera")
-	virtual ACameraActor* GetCameraActor() const;
+	ACameraActor* GetCameraActor() const;
 	
-	void SetManagerREF (UEonBound_CombatManager* InManager)
-	{
-		Manager = InManager;
-	}
+	void SetManagerREF (UEonBound_CombatManager* InManager);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> CancelAction;
 	
 };

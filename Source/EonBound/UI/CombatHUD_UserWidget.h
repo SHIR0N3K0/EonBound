@@ -10,6 +10,7 @@ class UOverlay;
 class UEonBound_CombatManager;
 class UButton;
 class UHorizontalBox;
+class UVerticalBox;
 class UPlayerStatut_UserWidget;
 class AEonBound_Character;
 /**
@@ -42,6 +43,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UOverlay> Overlay_Basic;
 	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> BTN_Skill;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UOverlay> Overlay_Skill;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UVerticalBox> VB_TurnOrder;
+	
 	virtual void NativeConstruct() override;
 	
 public:
@@ -49,11 +59,16 @@ public:
 	
 	void InitializePlayerStatuses(const TArray<AEonBound_Character*>& PlayerCharacters);
 	
+	//void InitializePlayerTurnOrder();
+	
 	UFUNCTION()
 	void AddPlayerStatusWidget(UUserWidget* PlayerStatusWidget);
 	
 	UFUNCTION()
 	void OnBasicButtonClicked();
+	
+	UFUNCTION()
+	void OnSkillButtonClicked();
 	
 	UPROPERTY()
 	TObjectPtr<UEonBound_CombatManager> CombatManagerRef;

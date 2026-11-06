@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Abilities/GameplayAbility.h"
-#include "EonBound_GameplayAbility.generated.h"
+#include "Blueprint/UserWidget.h"
+#include "TurnOrderPanel_UserWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class EONBOUND_API UEonBound_GameplayAbility : public UGameplayAbility
+class EONBOUND_API UTurnOrderPanel_UserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	

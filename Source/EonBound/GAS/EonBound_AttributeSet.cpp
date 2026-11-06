@@ -2,9 +2,11 @@
 
 
 #include "EonBound_AttributeSet.h"
+
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
+#include "EonBound/Character/EonBound_Character.h"
 
 UEonBound_AttributeSet::UEonBound_AttributeSet()
 {
@@ -41,25 +43,46 @@ void UEonBound_AttributeSet::PostGameplayEffectExecute(const struct FGameplayEff
 {
 	Super::PostGameplayEffectExecute(Data);
 	
+	// Vérifie si l'attribut modifié est "Damage" et applique les dégâts à la santé.
 	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		const float CurrentDamage = GetDamage();
 		const float CurrentDefense = GetDefense();
 		const float CurrentBalancingCoefficient = GetBalancingCoefficient();
+		
 		const float OldHealthValue = GetHealth();
 		const float MaxHealthValue = GetHealthMax();
+		
+		const FGameplayTag CriticalTag = FGameplayTag::RequestGameplayTag(FName("Data.IsCritical"));
+		const bool bIsCritical = Data.EffectSpec.GetSetByCallerMagnitude(CriticalTag,false,0.f) > 0.5f;
 		
 		const float NewHealthValue = FMath::Clamp
 		(OldHealthValue - (CurrentDamage / (1 + CurrentDefense/CurrentBalancingCoefficient)), 0, MaxHealthValue);
 		
 		UE_LOG(LogTemp, Warning, TEXT("Target Health: %.2f -> %.2f"),OldHealthValue,NewHealthValue);
 		
+		const float ActualDamage = OldHealthValue - NewHealthValue;
 		
 		if (OldHealthValue != NewHealthValue)
 		{
 			SetHealth(NewHealthValue);
 		}
+		
+		if (ActualDamage > 0.f)
+		{
+			if (AEonBound_Character* TargetCharacter =
+				Cast<AEonBound_Character>(Data.Target.GetAvatarActor()))
+			{
+				TargetCharacter->SpawnDamageNumber(ActualDamage, bIsCritical);
+			}
+		}
+		
 		SetDamage(0);
+	}
+	
+	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	{
+		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetHealthMax()));
 	}
 }
 

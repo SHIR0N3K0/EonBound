@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EonBound/GAS/EonBound_GameplayAbility.h"
+#include "Abilities/GameplayAbility.h"
 #include "EonBound_GA_NormalAttack.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class EONBOUND_API UEonBound_GA_NormalAttack : public UEonBound_GameplayAbility
+class EONBOUND_API UEonBound_GA_NormalAttack : public UGameplayAbility
 {
 	GENERATED_BODY()
 
@@ -18,11 +18,12 @@ public:
 	UEonBound_GA_NormalAttack();
 	
 protected:
+	
 	UPROPERTY()
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 	
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,
-	                             const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData) override;
+		const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData) override;
 	
 	
 	

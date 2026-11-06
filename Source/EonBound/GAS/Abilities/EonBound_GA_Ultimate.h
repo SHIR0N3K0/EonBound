@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EonBound/GAS/EonBound_GameplayAbility.h"
+#include "Abilities/GameplayAbility.h"
 #include "EonBound_GA_Ultimate.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class EONBOUND_API UEonBound_GA_Ultimate : public UEonBound_GameplayAbility
+class EONBOUND_API UEonBound_GA_Ultimate : public UGameplayAbility
 {
 	GENERATED_BODY()
 	

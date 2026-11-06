@@ -5,16 +5,15 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
-#include "Abilities/GameplayAbility.h"
 #include "EonBound_Character.generated.h"
 
 class UEonBound_AbilitySystemComponent;
 class UEonBound_AttributeSet;	
-class UEonBound_CombatComponent;
 class UGameplayAbility;
 class UEonBound_CombatManager;
 class UFocusUserWidget;
 class UWidgetComponent;
+class ADamageNumberActor;
 
 UCLASS()
 class EONBOUND_API AEonBound_Character : public ACharacter, public IAbilitySystemInterface
@@ -22,17 +21,14 @@ class EONBOUND_API AEonBound_Character : public ACharacter, public IAbilitySyste
 	GENERATED_BODY()
 	
 protected:
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UEonBound_AbilitySystemComponent> EonBound_ASC;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS", meta = (AllowPrivateAccess = true))
 	TObjectPtr<UEonBound_AttributeSet> EonBound_AttributeSet;
 	
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite,Category = "Combat")
-	TObjectPtr<UEonBound_CombatManager> CombatManager;
-	
 	UPROPERTY()
-	bool bDefaultAttributesInitialized = false;
+	TObjectPtr<UEonBound_CombatManager> CombatManager;
 	
 	void InitializeDefaultAttributes();
 
@@ -40,22 +36,39 @@ public:
 	// Sets default values for this character's properties
 	AEonBound_Character();
 	virtual void BeginPlay() override;
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
+	UPROPERTY()
+	bool bDefaultAttributesInitialized = false;
+	
+	UPROPERTY()
+	bool bInitialAbilitiesGiven = false;
+	
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
 	TSubclassOf<UGameplayAbility> BasicAttackAbility;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
+	TSubclassOf<UGameplayAbility> SkillAbility;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UFocusUserWidget> FocusWidgetClass;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UWidgetComponent> FocusWidget;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	bool bIsDead = false;
+	
+	UPROPERTY()
+	TObjectPtr<AEonBound_Character> CurrentActionTarget;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Damage Numbers")
+	TSubclassOf<ADamageNumberActor> DamageNumberClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Damage Numbers")
+	float DamageNumberHeight = 120.f;
 
 public:
 	void SetCombatManager(UEonBound_CombatManager* InCombatManager);
@@ -64,20 +77,21 @@ public:
 	{
 		return CombatManager.Get();
 	}
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
 	UFUNCTION(BlueprintCallable, Category = "GAS")
 	void GiveInitialAbilities();
 	
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite,Category = "Combat")
-	TObjectPtr<AActor> CurrentActionTarget;
+	void SetCurrentActionTarget(AEonBound_Character* NewTarget);
+	
+	AEonBound_Character* GetCurrentActionTarget() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool TryBasicAttack();
+		
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	bool TrySkill();
 	
 	void SetTargetIndicationVisibility(bool bVisible);
 	
@@ -86,5 +100,8 @@ public:
 	bool IsDead() const { return bIsDead; }
 	
 	FDelegateHandle HealthChangedHandle;
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat|Damage Numbers")
+	void SpawnDamageNumber(float Amount, bool bIsCritical);
 	
 };

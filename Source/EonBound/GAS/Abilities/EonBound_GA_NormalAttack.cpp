@@ -3,7 +3,7 @@
 
 #include "EonBound_GA_NormalAttack.h"
 #include "AbilitySystemBlueprintLibrary.h"
-#include "EonBound/GAS/Effects/EonBound_GE_Attack.h"
+#include "EonBound/GAS/Effects/Combat/EonBound_GE_Attack.h"
 #include "AbilitySystemComponent.h"
 #include "EonBound/GAS/EonBound_AttributeSet.h"	
 #include "GameplayTagContainer.h"
@@ -53,14 +53,14 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	// Récupère l'attaquant, sa cible actuelle et l'effet de dégâts à appliquer.
 	AEonBound_Character* Attacker = Cast<AEonBound_Character>(ActorInfo->AvatarActor.Get());
 
-	if (!Attacker || !Attacker->CurrentActionTarget ||!DamageEffectClass)
+	if (!Attacker || !Attacker->GetCurrentActionTarget() ||!DamageEffectClass)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo,true, true);
 		return;
 	}
 
 	// Récupère le composant GAS de la cible afin de pouvoir lui appliquer les dégâts.
-	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker->CurrentActionTarget);
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Attacker->GetCurrentActionTarget());
 
 	if (!TargetASC)
 	{
@@ -76,7 +76,7 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Attacker: %s | Target: %s | HasAuthority: %s"),*GetNameSafe(Attacker),
-		*GetNameSafe(Attacker ? Attacker->CurrentActionTarget : nullptr),
+		*GetNameSafe(Attacker ? Attacker->GetCurrentActionTarget() : nullptr),
 		Attacker && Attacker->HasAuthority() ? TEXT("true") : TEXT("false"));
 
 	// Un seul tirage par attaque.
@@ -86,14 +86,8 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 	const float FinalDamage = Attack *
 		(bIsCritical ? CritDamage/100.0f : 1.f);
 
-	UE_LOG(LogTemp, Warning,
-		TEXT("[Combat] Attack: %.2f | TC: %.2f%% | DC: %.2f%% | Critical: %s | Damage: %.2f"),
-		Attack,
-		CritRate,
-		CritDamage,
-		bIsCritical ? TEXT("YES") : TEXT("NO"),
-		FinalDamage
-	);
+	UE_LOG(LogTemp, Warning,TEXT("[Combat] Attack: %.2f | TC: %.2f%% | DC: %.2f%% | Critical: %s | Damage: %.2f"),
+		Attack,CritRate,CritDamage,bIsCritical ? TEXT("YES") : TEXT("NO"),FinalDamage);
 
 	// L'effet gameplay est créé et appliqué uniquement côté serveur.
 	if (Attacker->HasAuthority())
@@ -107,7 +101,19 @@ void UEonBound_GA_NormalAttack::ActivateAbility(const FGameplayAbilitySpecHandle
 		if (Spec.IsValid())
 		{
 			const FGameplayTag DamageTag = FGameplayTag::RequestGameplayTag(FName("Data.Damage"));
-			Spec.Data->SetSetByCallerMagnitude(DamageTag,FinalDamage);
+
+			const FGameplayTag CriticalTag = FGameplayTag::RequestGameplayTag(FName("Data.IsCritical"));
+
+			// Transmet les dégâts calculés.
+			Spec.Data->SetSetByCallerMagnitude(DamageTag, FinalDamage);
+
+			// Transmet si l'attaque est critique.
+			Spec.Data->SetSetByCallerMagnitude(
+				CriticalTag,
+				bIsCritical ? 1.f : 0.f
+			);
+
+			// Applique l'effet à la cible.
 			TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 		}
 	}
@@ -122,6 +128,7 @@ void UEonBound_GA_NormalAttack::OnDelayTimerFinished()
 {
 	UE_LOG(LogTemp, Warning,TEXT("[Combat] NormalAttack: EndAbility called."));
 	
+	// Notifie le CombatManager que l'action est terminée, afin qu'il puisse passer au tour suivant.
 	if (AEonBound_Character* AttackingChar = Cast<AEonBound_Character>(ActorInfoCopy->AvatarActor.Get()))
 	{
 		UE_LOG(LogTemp, Warning,TEXT("[Combat] Attacker: %s | Manager: %s"),*AttackingChar->GetName(),

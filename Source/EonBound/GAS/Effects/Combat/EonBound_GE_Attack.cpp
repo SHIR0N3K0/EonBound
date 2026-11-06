@@ -4,7 +4,6 @@
 #include "EonBound_GE_Attack.h"
 #include "EonBound/GAS/EonBound_AttributeSet.h"	
 #include "GameplayTagContainer.h"
-#include "EonBound/GAS/Effects/EonBound_MMC_AttackDamage.h"
 
 UEonBound_GE_Attack::UEonBound_GE_Attack()
 {

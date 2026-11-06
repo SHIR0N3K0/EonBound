@@ -2,14 +2,15 @@
 
 
 #include "EonBound_Character.h"
+
 #include "AbilitySystemComponent.h"
 #include "EonBound/UI/FocusUserWidget.h"
 #include "Components/WidgetComponent.h"
 #include "EonBound/Combat/EonBound_CombatManager.h"
 #include "EonBound/GAS/EonBound_AbilitySystemComponent.h"
 #include "EonBound/GAS/EonBound_AttributeSet.h"
-#include "EonBound/GAS/Abilities/EonBound_GA_NormalAttack.h"
 #include "EonBound/GAS/Effects/EonBound_GE_DefaultAttribute.h"
+#include "EonBound/Combat/DamageNumberActor.h"
 
 // Sets default values
 AEonBound_Character::AEonBound_Character()
@@ -23,8 +24,6 @@ AEonBound_Character::AEonBound_Character()
 	EonBound_ASC->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 	SetNetUpdateFrequency(70);
 	EonBound_AttributeSet = CreateDefaultSubobject<UEonBound_AttributeSet>("EonBound_AttributeSet");
-	
-	BasicAttackAbility = UEonBound_GA_NormalAttack::StaticClass();
 	
 	FocusWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("FocusWidget"));
 	FocusWidget->SetupAttachment(RootComponent);
@@ -40,7 +39,12 @@ void AEonBound_Character::BeginPlay()
 	if (EonBound_ASC)
 	{
 		EonBound_ASC->InitAbilityActorInfo(this, this);
-		InitializeDefaultAttributes();
+		
+		if (HasAuthority() && !bDefaultAttributesInitialized)
+		{
+			InitializeDefaultAttributes();
+			GiveInitialAbilities();
+		}
 				
 		HealthChangedHandle = EonBound_ASC->GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetHealthAttribute())
 			.AddWeakLambda(this,[this](const FOnAttributeChangeData& Data)
@@ -53,22 +57,10 @@ void AEonBound_Character::BeginPlay()
 		
 	}
 	
-	if (FocusWidgetClass)
+	if (FocusWidgetClass && IsValid(FocusWidget))
 	{
 		FocusWidget->SetWidgetClass(FocusWidgetClass);
 	}
-}
-
-void AEonBound_Character::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
-// Called to bind functionality to input
-void AEonBound_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 UAbilitySystemComponent* AEonBound_Character::GetAbilitySystemComponent() const
@@ -95,7 +87,7 @@ void AEonBound_Character::SetCombatManager(UEonBound_CombatManager* InCombatMana
 
 void AEonBound_Character::GiveInitialAbilities()
 {
-	if (!HasAuthority() || !EonBound_ASC)
+	if (!HasAuthority() || !EonBound_ASC || bInitialAbilitiesGiven)
 	{
 		return;
 	}
@@ -104,6 +96,23 @@ void AEonBound_Character::GiveInitialAbilities()
 	{
 		EonBound_ASC->GiveAbility(FGameplayAbilitySpec(BasicAttackAbility, 1, 0));
 	}
+	
+	if (SkillAbility)
+	{
+		EonBound_ASC->GiveAbility(FGameplayAbilitySpec(SkillAbility, 1, 0));
+	}
+	
+	bInitialAbilitiesGiven = true;
+}
+
+void AEonBound_Character::SetCurrentActionTarget(AEonBound_Character* NewTarget)
+{
+	CurrentActionTarget = NewTarget;
+}
+
+AEonBound_Character* AEonBound_Character::GetCurrentActionTarget() const
+{
+	return CurrentActionTarget.Get();
 }
 
 bool AEonBound_Character::TryBasicAttack()
@@ -113,6 +122,10 @@ bool AEonBound_Character::TryBasicAttack()
 		return false;
 	}
 	
+	if (bIsDead)
+	{
+		return false;
+	}
 	FGameplayTag AttackTag =FGameplayTag::RequestGameplayTag(FName("Ability.BasicAttack"));
 	
 	const bool bActivated = EonBound_ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
@@ -124,6 +137,33 @@ bool AEonBound_Character::TryBasicAttack()
 	else
 	{
 		UE_LOG(LogTemp, Warning,TEXT("Basic attack ability activation failed. Check that the ability is granted, has the tag Ability.BasicAttack, and is not blocked."));
+	}
+	return bActivated;
+}
+
+bool AEonBound_Character::TrySkill()
+{
+	if (!CurrentActionTarget || !EonBound_ASC)
+	{
+		return false;
+	}
+	
+	if (bIsDead)
+	{
+		return false;
+	}
+	
+	FGameplayTag SkillTag =FGameplayTag::RequestGameplayTag(FName("Ability.Skill.Heal"));
+	
+	const bool bActivated = EonBound_ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(SkillTag));
+
+	if (bActivated)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Skill ability activated successfully."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning,TEXT("Skill ability activation failed. Check that the ability is granted, has the tag Ability.Skill, and is not blocked."));
 	}
 	return bActivated;
 }
@@ -157,6 +197,33 @@ void AEonBound_Character::HandleDeath()
 	UE_LOG(LogTemp, Warning,TEXT("[Combat] %s is dead."), *GetName());
 }
 
+void AEonBound_Character::SpawnDamageNumber(float Amount, bool bIsCritical)
+{
+	if (!DamageNumberClass || !GetWorld())
+	{
+		return;
+	}
+
+	// Position au-dessus du personnage
+	FVector SpawnLocation = GetActorLocation();
+	SpawnLocation.Z += DamageNumberHeight;
+
+	// Paramètres de spawn
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	// Spawn du Damage Number
+	ADamageNumberActor* DamageActor = GetWorld()->SpawnActor<ADamageNumberActor>(DamageNumberClass,SpawnLocation,FRotator::ZeroRotator,SpawnParams);
+	
+	if (!DamageActor)
+	{
+		return;
+	}
+
+	// Initialisation du Widget
+	DamageActor->InitializeDamage(Amount, bIsCritical);
+}
+
 //TEMPORARY: Set the default value of the Chara using a Gameplay Effect
 void AEonBound_Character::InitializeDefaultAttributes()
 {
@@ -175,6 +242,4 @@ void AEonBound_Character::InitializeDefaultAttributes()
 		EonBound_ASC->ApplyGameplayEffectSpecToSelf(*EffectSpec.Data.Get());
 		bDefaultAttributesInitialized = true;
 	}
-	
-	GiveInitialAbilities();
 }

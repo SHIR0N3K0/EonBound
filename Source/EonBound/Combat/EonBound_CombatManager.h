@@ -7,10 +7,27 @@
 #include "UObject/Object.h"
 #include "EonBound_CombatManager.generated.h"
 
-class UEonBound_CombatComponent;
 class AEonBound_Character;
 class UCombatHUD_UserWidget;
 class APlayerController;
+
+
+
+UENUM()
+enum class ECombatTargetingMode : uint8
+{
+	TargetNone,
+	TargetAlly,
+	TargetEnemy,
+	TargetAny
+};
+
+UENUM()
+enum class ECombatActionMode : uint8
+{
+	BasicAttack,
+	Skill
+};
 
 /**
  * 
@@ -28,6 +45,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void RequestPlayerBasicAttack(AEonBound_Character* AttackTarget);
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void RequestPlayerSkill(AEonBound_Character* AttackTarget);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void NotifyActionFinished();
@@ -41,7 +61,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|UI")
 	TSubclassOf<UCombatHUD_UserWidget> CombatHUDClass;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TObjectPtr<UCombatHUD_UserWidget> CombatHUD;
 	
 protected:
@@ -49,7 +69,7 @@ protected:
 	EEonBound_CombatState CombatState = EEonBound_CombatState::Preparing;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	TObjectPtr<AEonBound_Character> ActiveCombatant;
+	TObjectPtr<AEonBound_Character> ActiveCombatant = nullptr;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat",meta = (AllowPrivateAccess = "true"))
 	TArray<TObjectPtr<AEonBound_Character>> TurnOrder;
@@ -65,6 +85,8 @@ protected:
 	
 	void OnDelayTimerFinished();
 	
+	void ClearCombatTimers();
+	
 	
 public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
@@ -74,23 +96,38 @@ public:
 	TArray<TObjectPtr<AEonBound_Character>> EnemyCombatants;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	TObjectPtr<AEonBound_Character> SelectedEnemyTarget;
+	TObjectPtr<AEonBound_Character> SelectedTarget = nullptr;
 	
 	void SetSelectedTarget(AEonBound_Character* RequestedTarget);
+	
+	void BeginTargeting(ECombatTargetingMode NewTargetingMode);
+
+	void CancelTargeting();
 	
 	UPROPERTY()
 	int32 CurrentWaveIndex = 0;
 
 	UPROPERTY()
 	int32 TotalWaves = 1;
+	
+	void ToggleSkillTargeting();
+	
+	ECombatTargetingMode GetTargetingMode() const
+	{
+		return TargetingMode;
+	}
 
 private:
+	
 	void SetCombatState(EEonBound_CombatState NewState);
 	void StartEnemyTurn();
 	bool IsCombatantAlive(AEonBound_Character* Combatant) const;
 	void BuildTurnOrder();
-	float GetCombatantSpeed(AEonBound_Character* Combatant) const;
+	float GetCombatantSpeed(const AEonBound_Character* Combatant) const;
 	void AdvanceTurn();
 	void StartCurrentTurn(bool bIsNewRound = false);
 	void SelectFirstLivingEnemy();
+	bool ValidateCombatants();
+	
+	ECombatTargetingMode TargetingMode = ECombatTargetingMode::TargetEnemy;
 };
