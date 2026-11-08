@@ -7,7 +7,7 @@
 #include "DamageNumberActor.generated.h"
 
 class UWidgetComponent;
-class UWBP_DamageNumber;
+class UDamageNumber_UserWidget;
 
 UCLASS()
 class EONBOUND_API ADamageNumberActor : public AActor
@@ -25,7 +25,7 @@ protected:
 	FTimerHandle DamageNumberTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Damage Number")
-	TSubclassOf<UUserWidget> DamageWidgetClass;
+	TSubclassOf<UDamageNumber_UserWidget> DamageWidgetClass;
 	
 public:	
 	// Sets default values for this actor's properties

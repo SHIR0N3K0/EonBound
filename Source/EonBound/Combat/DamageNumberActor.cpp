@@ -14,7 +14,6 @@ ADamageNumberActor::ADamageNumberActor()
 	PrimaryActorTick.bCanEverTick = false;
 	
 	DamageWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("DamageWidget"));
-	DamageWidget->SetWidgetClass(DamageWidgetClass);
 	RootComponent = DamageWidget;
 	DamageWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	DamageWidget->SetDrawSize(FVector2D(150.f, 50.f));
@@ -22,23 +21,43 @@ ADamageNumberActor::ADamageNumberActor()
 
 void ADamageNumberActor::InitializeDamage(float Amount, bool bIsCritical)
 {
-	UDamageNumber_UserWidget* DamageUserWidget = Cast<UDamageNumber_UserWidget>(DamageWidget->GetUserWidgetObject());
-	
+	UUserWidget* Widget = DamageWidget->GetUserWidgetObject();
+
+	if (!Widget)
+	{
+		DamageWidget->InitWidget();
+		Widget = DamageWidget->GetUserWidgetObject();
+	}
+
+	UDamageNumber_UserWidget* DamageUserWidget = Cast<UDamageNumber_UserWidget>(Widget);
+
 	if (!DamageUserWidget)
 	{
+		UE_LOG(LogTemp, Error, TEXT("[DamageNumber] Widget is null or not a UDamageNumber_UserWidget (class: %s)."),
+			*GetNameSafe(Widget ? Widget->GetClass() : nullptr));
+		Destroy();
 		return;
 	}
-	
+
 	DamageUserWidget->SetDamageValue(Amount, bIsCritical);
-	
-	GetWorldTimerManager().SetTimer(DamageNumberTimerHandle,this,&ADamageNumberActor::DestroyDamageNumber,DisplayDuration,false);
+
+	GetWorldTimerManager().SetTimer(DamageNumberTimerHandle, this, &ADamageNumberActor::DestroyDamageNumber, DisplayDuration, false);
 }
 
 // Called when the game starts or when spawned
 void ADamageNumberActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (DamageWidgetClass)
+	{
+		DamageWidget->SetWidgetClass(DamageWidgetClass);
+		DamageWidget->InitWidget();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[DamageNumber] DamageWidgetClass is not assigned in %s."), *GetName());
+	}
 }
 
 void ADamageNumberActor::DestroyDamageNumber()

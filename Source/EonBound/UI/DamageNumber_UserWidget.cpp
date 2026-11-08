@@ -18,7 +18,7 @@ void UDamageNumber_UserWidget::SetDamageValue(float DamageValue, bool bIsCritica
 		
 		if (bIsCritical && DamageValue > 0)
 		{
-			TXT_DamageNumber->SetColorAndOpacity(FSlateColor(FLinearColor::Red));
+			TXT_DamageNumber->SetColorAndOpacity(FLinearColor::Red);
 			FSlateFontInfo FontInfo = TXT_DamageNumber->GetFont();
 			FontInfo.Size = 42;
 			TXT_DamageNumber->SetFont(FontInfo);
