@@ -30,6 +30,10 @@ public:
 	bool ApplyTurnCooldown(TSubclassOf<UGameplayEffect> CooldownEffect,FGameplayTag CooldownTag,int32 DurationInTurns);
 
 	void AdvanceTurnCooldowns();
+	
+	bool HasTurnCooldown(const FGameplayTag& CooldownTag) const;
+
+	int32 GetTurnCooldownRemaining(const FGameplayTag& CooldownTag) const;
 
 private:
 
