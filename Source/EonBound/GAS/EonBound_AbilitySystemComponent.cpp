@@ -73,5 +73,20 @@ void UEonBound_AbilitySystemComponent::AdvanceTurnCooldowns()
 	}
 }
 
+bool UEonBound_AbilitySystemComponent::HasTurnCooldown(const FGameplayTag& CooldownTag) const
+{
+	return GetTurnCooldownRemaining(CooldownTag) > 0;
+}
 
+int32 UEonBound_AbilitySystemComponent::GetTurnCooldownRemaining(const FGameplayTag& CooldownTag) const
+{
+	for (const FTurnBasedCooldown& Cooldown : ActiveTurnCooldowns)
+	{
+		if (Cooldown.CooldownTag == CooldownTag)
+		{
+			return Cooldown.RemainingTurns;
+		}
+	}
 
+	return 0;
+}

@@ -134,8 +134,10 @@ void AEonBound_GameMode::SpawnTestCombatants()
             UE_LOG(LogTemp, Error,TEXT("[Spawn] Failed to spawn ally at point %d."),i);
             continue;
         }
-
+	
+	 	Ally->SetTargetIndicationVisibility(false);
         CombatManager->PlayerCombatants.Add(Ally);
+	 	Ally->SetSlotIndex(AllyPoints[i]->SpawnOrder);
 
         UE_LOG(LogTemp, Log,TEXT("[Spawn] Ally %s spawned at point %d."),*Ally->GetName(), i);
     }
@@ -162,6 +164,7 @@ void AEonBound_GameMode::SpawnTestCombatants()
 
         Enemy->SetTargetIndicationVisibility(false);
         CombatManager->EnemyCombatants.Add(Enemy);
+    	Enemy->SetSlotIndex(EnemyPoints[i]->SpawnOrder);
 
         UE_LOG(LogTemp, Log,TEXT("[Spawn] Enemy %s spawned at point %d."),*Enemy->GetName(), i);
     }

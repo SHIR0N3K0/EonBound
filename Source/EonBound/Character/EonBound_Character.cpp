@@ -3,6 +3,7 @@
 
 #include "EonBound_Character.h"
 
+#include "EonBound/GAS/Abilities/EonBound_GA_Skill.h"
 #include "AbilitySystemComponent.h"
 #include "EonBound/UI/FocusUserWidget.h"
 #include "Components/WidgetComponent.h"
@@ -102,6 +103,11 @@ void AEonBound_Character::GiveInitialAbilities()
 		EonBound_ASC->GiveAbility(FGameplayAbilitySpec(SkillAbility, 1, 0));
 	}
 	
+	if (UltimateAbility)
+	{
+		EonBound_ASC->GiveAbility(FGameplayAbilitySpec(UltimateAbility, 1, 0));
+	}
+	
 	bInitialAbilitiesGiven = true;
 }
 
@@ -143,19 +149,18 @@ bool AEonBound_Character::TryBasicAttack()
 
 bool AEonBound_Character::TrySkill()
 {
-	if (!CurrentActionTarget || !EonBound_ASC)
+	if (!SkillAbility || !EonBound_ASC || bIsDead)
 	{
 		return false;
 	}
-	
-	if (bIsDead)
+
+	if (CurrentActionTargets.IsEmpty())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] TrySkill: aucune cible pour %s."), *GetName());
 		return false;
 	}
-	
-	FGameplayTag SkillTag =FGameplayTag::RequestGameplayTag(FName("Ability.Skill.Heal"));
-	
-	const bool bActivated = EonBound_ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(SkillTag));
+
+	const bool bActivated = EonBound_ASC->TryActivateAbilityByClass(SkillAbility);
 
 	if (bActivated)
 	{
@@ -163,9 +168,50 @@ bool AEonBound_Character::TrySkill()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Skill ability activation failed. Check that the ability is granted, has the tag Ability.Skill, and is not blocked."));
+		UE_LOG(LogTemp, Warning, TEXT("Skill ability activation failed: not granted, on cooldown or blocked."));
 	}
+
 	return bActivated;
+}
+
+void AEonBound_Character::SetCurrentActionTargets(const TArray<AEonBound_Character*>& NewTargets)
+{
+	CurrentActionTargets.Reset();
+
+	for (AEonBound_Character* Target : NewTargets)
+	{
+		if (Target)
+		{
+			CurrentActionTargets.Add(Target);
+		}
+	}
+}
+
+const FSkillTargeting* AEonBound_Character::GetSkillTargeting() const
+{
+	if (!SkillAbility)
+	{
+		return nullptr;
+	}
+
+	return &SkillAbility->GetDefaultObject<UEonBound_GA_Skill>()->GetTargeting();
+}
+
+bool AEonBound_Character::CanUseSkill() const
+{
+	if (!SkillAbility || !EonBound_ASC || bIsDead)
+	{
+		return false;
+	}
+
+	const FGameplayAbilitySpec* Spec = EonBound_ASC->FindAbilitySpecFromClass(SkillAbility);
+
+	if (!Spec || !Spec->Ability)
+	{
+		return false;
+	}
+
+	return Spec->Ability->CanActivateAbility(Spec->Handle, EonBound_ASC->AbilityActorInfo.Get());
 }
 
 void AEonBound_Character::SetTargetIndicationVisibility(bool bVisible)
@@ -242,4 +288,16 @@ void AEonBound_Character::InitializeDefaultAttributes()
 		EonBound_ASC->ApplyGameplayEffectSpecToSelf(*EffectSpec.Data.Get());
 		bDefaultAttributesInitialized = true;
 	}
+}
+
+int32 AEonBound_Character::GetSkillCooldownRemaining() const
+{
+	if (!SkillAbility || !EonBound_ASC)
+	{
+		return 0;
+	}
+
+	const FGameplayTag& Tag = SkillAbility->GetDefaultObject<UEonBound_GA_Skill>()->GetCooldownTag();
+
+	return Tag.IsValid() ? EonBound_ASC->GetTurnCooldownRemaining(Tag) : 0;
 }

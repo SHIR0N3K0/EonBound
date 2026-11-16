@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "EonBound_CombatState.h"
 #include "UObject/Object.h"
+#include "EonBound/GAS/Abilities/EonBound_SkillTypes.h"
 #include "EonBound_CombatManager.generated.h"
 
 class AEonBound_Character;
@@ -45,9 +46,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void RequestPlayerBasicAttack(AEonBound_Character* AttackTarget);
-	
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void RequestPlayerSkill(AEonBound_Character* AttackTarget);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void NotifyActionFinished();
@@ -112,6 +110,11 @@ public:
 	
 	void ToggleSkillTargeting();
 	
+	bool IsSkillTargeting() const
+	{
+		return bSkillTargeting;
+	}
+	
 	ECombatTargetingMode GetTargetingMode() const
 	{
 		return TargetingMode;
@@ -129,5 +132,27 @@ private:
 	void SelectFirstLivingEnemy();
 	bool ValidateCombatants();
 	
+	// Ciblage des compétences
+	void BeginSkillTargeting();
+	void ConfirmSkill();
+	void EndSkillTargeting();
+	void PickSkillTarget(AEonBound_Character* Clicked);
+	void RefreshSkillPreview();
+	TArray<AEonBound_Character*> ComputeSkillTargets() const;
+
+	bool bSkillTargeting = false;
+
+	FSkillTargeting ActiveSkillTargeting;
+
+	// Cibles cliquées par le joueur.
+	UPROPERTY()
+	TArray<TObjectPtr<AEonBound_Character>> SkillPickedTargets;
+
+	// Cibles réellement touchées (clic + voisins, ou toute l'équipe).
+	UPROPERTY()
+	TArray<TObjectPtr<AEonBound_Character>> SkillPreviewTargets;
+	
 	ECombatTargetingMode TargetingMode = ECombatTargetingMode::TargetEnemy;
+	
+	AEonBound_Character* GetDefaultSkillTarget() const;
 };

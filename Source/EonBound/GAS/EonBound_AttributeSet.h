@@ -48,6 +48,10 @@ public:
 	FGameplayAttributeData Energy;
 	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, Energy);
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CustomAbilitySystemComponent, Replicated)
+	FGameplayAttributeData EnergyMax;
+	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, EnergyMax);
+	
 	// BalancingCoefficient is used to balance the damage calculation formula.
 	// More means that the defense will have less impact on the damage received.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CustomAbilitySystemComponent, Replicated)

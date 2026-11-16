@@ -26,6 +26,7 @@ public:
 		FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	
 	const FSkillTargeting& GetTargeting() const { return Targeting; }
+	const FGameplayTag& GetCooldownTag() const { return CooldownTag; }
 	
 protected:
 

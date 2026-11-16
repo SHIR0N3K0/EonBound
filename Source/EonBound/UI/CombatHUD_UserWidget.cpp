@@ -6,6 +6,7 @@
 #include "Components/Button.h"
 #include "EonBound/UI/PlayerStatut_UserWidget.h"
 #include "EonBound/Character/EonBound_Character.h"
+#include "Components/TextBlock.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Overlay.h"
@@ -18,6 +19,10 @@ void UCombatHUD_UserWidget::NativeConstruct()
 	if (IsValid(BTN_Basic))
 	{
 		BTN_Basic->OnClicked.AddDynamic(this, &UCombatHUD_UserWidget::OnBasicButtonClicked);
+	}
+	if (IsValid(BTN_Skill))
+	{
+		BTN_Skill->OnClicked.AddDynamic(this, &UCombatHUD_UserWidget::OnSkillButtonClicked);
 	}
 }
 
@@ -108,5 +113,31 @@ void UCombatHUD_UserWidget::SetButtonVisibility(ECombatHUDState State, bool bIsV
 	case ECombatHUDState::Ult:
 		// Handle Ultimate button visibility
 		break;
+	}
+}
+
+void UCombatHUD_UserWidget::SetSkillButtonEnabled(bool bEnabled)
+{
+	if (IsValid(BTN_Skill))
+	{
+		BTN_Skill->SetIsEnabled(bEnabled);
+	}
+}
+
+void UCombatHUD_UserWidget::SetSkillCooldown(int32 RemainingTurns)
+{
+	if (!IsValid(TXT_CoolDownSkill))
+	{
+		return;
+	}
+
+	if (RemainingTurns > 0)
+	{
+		TXT_CoolDownSkill->SetText(FText::AsNumber(RemainingTurns));
+		TXT_CoolDownSkill->SetVisibility(ESlateVisibility::HitTestInvisible);
+	}
+	else
+	{
+		TXT_CoolDownSkill->SetVisibility(ESlateVisibility::Hidden);
 	}
 }

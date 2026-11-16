@@ -10,6 +10,8 @@
 class UEonBound_AbilitySystemComponent;
 class UEonBound_AttributeSet;	
 class UGameplayAbility;
+class UEonBound_GA_Skill;
+struct FSkillTargeting;
 class UEonBound_CombatManager;
 class UFocusUserWidget;
 class UWidgetComponent;
@@ -38,7 +40,7 @@ public:
 	virtual void BeginPlay() override;
 	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
+	 
 	UPROPERTY()
 	bool bDefaultAttributesInitialized = false;
 	
@@ -50,7 +52,10 @@ protected:
 	TSubclassOf<UGameplayAbility> BasicAttackAbility;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
-	TSubclassOf<UGameplayAbility> SkillAbility;
+	TSubclassOf<UEonBound_GA_Skill> SkillAbility;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
+	TSubclassOf<UGameplayAbility> UltimateAbility;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UFocusUserWidget> FocusWidgetClass;
@@ -63,6 +68,14 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<AEonBound_Character> CurrentActionTarget;
+	
+	// Cibles des compétences (la basique continue d'utiliser CurrentActionTarget).
+	UPROPERTY()
+	TArray<TObjectPtr<AEonBound_Character>> CurrentActionTargets;
+
+	// Emplacement dans la formation, copié depuis le point de spawn.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	int32 SlotIndex = 0;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Damage Numbers")
 	TSubclassOf<ADamageNumberActor> DamageNumberClass;
@@ -92,6 +105,26 @@ public:
 		
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	bool TrySkill();
+	
+	void SetCurrentActionTargets(const TArray<AEonBound_Character*>& NewTargets);
+
+	const TArray<TObjectPtr<AEonBound_Character>>& GetCurrentActionTargets() const
+	{
+		return CurrentActionTargets;
+	}
+
+	// Réglage de l'emplacement dans la formation, copié depuis le point de spawn.
+	void SetSlotIndex(int32 InSlotIndex) { SlotIndex = InSlotIndex; }
+	int32 GetSlotIndex() const { return SlotIndex; }
+
+	// Réglage de ciblage de la compétence, lu sur la classe (nullptr si le perso n'en a pas).
+	const FSkillTargeting* GetSkillTargeting() const;
+
+	// Vrai si la compétence est donnée, hors cooldown et utilisable.
+	bool CanUseSkill() const;
+	
+	// Tours de cooldown restants sur la compétence (0 si disponible).
+	int32 GetSkillCooldownRemaining() const;
 	
 	void SetTargetIndicationVisibility(bool bVisible);
 	

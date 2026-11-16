@@ -9,6 +9,7 @@
 class UOverlay;
 class UEonBound_CombatManager;
 class UButton;
+class UTextBlock;
 class UHorizontalBox;
 class UVerticalBox;
 class UPlayerStatut_UserWidget;
@@ -49,6 +50,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UOverlay> Overlay_Skill;
 	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> TXT_CoolDownSkill;
+	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UVerticalBox> VB_TurnOrder;
 	
@@ -74,4 +78,8 @@ public:
 	TObjectPtr<UEonBound_CombatManager> CombatManagerRef;
 	
 	void SetButtonVisibility(ECombatHUDState State, bool bIsVisible);
+	
+	void SetSkillButtonEnabled(bool bEnabled);
+	
+	void SetSkillCooldown(int32 RemainingTurns);
 };

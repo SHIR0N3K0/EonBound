@@ -30,19 +30,20 @@ void UDamageNumber_UserWidget::SetDamageValue(float DamageValue, bool bIsCritica
 		}
 		else if (!bIsCritical && DamageValue > 0)
 		{
-			TXT_DamageNumber->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+			TXT_DamageNumber->SetColorAndOpacity(FLinearColor::White);
 			FSlateFontInfo FontInfo = TXT_DamageNumber->GetFont();
 			FontInfo.Size = 32;
 			TXT_DamageNumber->SetFont(FontInfo);
-			TXT_DamageNumber->SetText(FText::FromString({DamageString}));
+			TXT_DamageNumber->SetText(FText::FromString(DamageString));
 		}
 		else if (DamageValue < 0)
 		{
+			// Soin : valeur négative en entrée, affichée en vert avec un « + ».
 			TXT_DamageNumber->SetColorAndOpacity(FSlateColor(FLinearColor::Green));
 			FSlateFontInfo FontInfo = TXT_DamageNumber->GetFont();
 			FontInfo.Size = 32;
 			TXT_DamageNumber->SetFont(FontInfo);
-			TXT_DamageNumber->SetText(FText::FromString({DamageString}));
+			TXT_DamageNumber->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), FMath::Abs(DamageValue))));
 		}
 	}
 }

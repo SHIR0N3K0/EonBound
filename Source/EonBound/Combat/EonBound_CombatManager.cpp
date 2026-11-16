@@ -2,6 +2,7 @@
 
 
 #include "EonBound_CombatManager.h"
+
 #include "Engine/Engine.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
@@ -26,6 +27,8 @@ void UEonBound_CombatManager::StartCombat()
 
 	ActiveCombatant = nullptr;
 	SelectedTarget = nullptr;
+	
+	EndSkillTargeting();
 
 	CurrentTurnIndex = 0;
 	RoundNumber = 1;
@@ -130,6 +133,12 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Atta
 			*UEnum::GetValueAsString(CombatState),*GetNameSafe(ActiveCombatant),*GetNameSafe(AttackTarget),
 				EnemyCombatants.Num());
 
+	if (bSkillTargeting)
+	{
+		CancelTargeting();
+		return;
+	}
+	
 	if (!PlayerCombatants.Contains(ActiveCombatant))
 	{
 		return;
@@ -207,90 +216,6 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Atta
 	TargetingMode = ECombatTargetingMode::TargetEnemy;
 }
 
-void UEonBound_CombatManager::RequestPlayerSkill(AEonBound_Character* SkillTarget)
-{
-	if (CombatState != EEonBound_CombatState::PlayerTurn)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[Combat] Skill request blocked: not the player's turn."));
-		return;
-	}
-
-	AEonBound_Character* SkillUser = ActiveCombatant;
-
-	if (CombatState != EEonBound_CombatState::PlayerTurn)
-	{
-		return;
-	}
-
-	if (!IsValid(SkillUser) || !PlayerCombatants.Contains(SkillUser))
-	{
-		return;
-	}
-
-	bool bValidTarget = false;
-
-	switch (TargetingMode)
-	{
-	case ECombatTargetingMode::TargetAlly:
-
-		bValidTarget = PlayerCombatants.Contains(SkillTarget);
-		break;
-
-	case ECombatTargetingMode::TargetEnemy:
-
-		bValidTarget = EnemyCombatants.Contains(SkillTarget);
-		break;
-
-	default:
-		return;
-	}
-
-	if (!bValidTarget)
-	{
-		return;
-	}
-
-	// Vérifier que la cible est vivante.
-	if (!IsCombatantAlive(SkillTarget))
-	{
-		return;
-	}
-
-	// Transmettre la cible.
-	SkillUser->SetCurrentActionTarget(SkillTarget);
-
-	// Quitter le mode de ciblage.
-	TargetingMode = ECombatTargetingMode::TargetNone;
-
-	// Activer la compétence.
-	SetCombatState(EEonBound_CombatState::ExecutingAction);
-
-	if (!SkillUser->TrySkill())
-	{
-		UE_LOG(LogTemp, Error,
-			TEXT("[Combat] Skill activation failed."));
-
-		SetCombatState(EEonBound_CombatState::PlayerTurn);
-		return;
-	}
-
-	// Masquer les boutons d'action.
-	if (CombatHUD)
-	{
-		CombatHUD->SetButtonVisibility(ECombatHUDState::Basic, false);
-		CombatHUD->SetButtonVisibility(ECombatHUDState::Skill, false);
-	}
-
-	SkillTarget->SetTargetIndicationVisibility(false);
-	
-	TargetingMode = ECombatTargetingMode::TargetEnemy;
-	
-	UE_LOG(LogTemp, Warning,
-	TEXT("[Combat] Skill request | CombatState: %d | Target: %s"),
-	static_cast<int32>(CombatState),
-	*GetNameSafe(SkillTarget));
-}
-
 void UEonBound_CombatManager::NotifyActionFinished()
 {
 	// Vérifie que le combat est en cours et qu'une action était en train de s'exécuter.
@@ -299,6 +224,12 @@ void UEonBound_CombatManager::NotifyActionFinished()
 		return;
 	}
 
+	// Les cibles de la compétence ne servent plus.
+	if (IsValid(ActiveCombatant))
+	{
+		ActiveCombatant->SetCurrentActionTargets(TArray<AEonBound_Character*>());
+	}
+	
 	CheckCombatEnd();
 	
 	// Si le combat est terminé, on ne passe pas au tour suivant.
@@ -382,6 +313,13 @@ void UEonBound_CombatManager::SetSelectedTarget(AEonBound_Character* RequestedTa
 		return;
 	}
 	
+	// Pendant le ciblage d'une compétence, un clic choisit une cible de compétence.
+	if (bSkillTargeting)
+	{
+		PickSkillTarget(RequestedTarget);
+		return;
+	}
+	
 	// Si la cible demandée est invalide, morte ou n'est pas un ennemi,
 	// conserver la sélection actuelle si elle est encore valide.
 	if (!IsValid(RequestedTarget) || !EnemyCombatants.Contains(RequestedTarget) || !IsCombatantAlive(RequestedTarget))
@@ -444,6 +382,11 @@ void UEonBound_CombatManager::CancelTargeting()
 	{
 		return;
 	}
+	
+	if (bSkillTargeting)
+	{
+		EndSkillTargeting();
+	}
 
 	TargetingMode = ECombatTargetingMode::TargetEnemy;
 
@@ -455,43 +398,20 @@ void UEonBound_CombatManager::CancelTargeting()
 
 void UEonBound_CombatManager::ToggleSkillTargeting()
 {
-	if (CombatState != EEonBound_CombatState::PlayerTurn)
+	if (CombatState != EEonBound_CombatState::PlayerTurn || !IsValid(ActiveCombatant))
 	{
 		return;
 	}
 
-	// Vérifier qu'un personnage actif existe.
-	if (!IsValid(ActiveCombatant))
+	// Premier appui : entrer en ciblage. Deuxième appui : confirmer.
+	if (bSkillTargeting)
 	{
-		return;
-	}
-
-	AEonBound_Character* ActiveCharacter =
-		Cast<AEonBound_Character>(ActiveCombatant);
-
-	if (!ActiveCharacter)
-	{
-		return;
-	}
-
-	// Basculer entre BasicAttack et Heal.
-	if (TargetingMode == ECombatTargetingMode::TargetEnemy)
-	{
-		TargetingMode = ECombatTargetingMode::TargetAlly;
+		ConfirmSkill();
 	}
 	else
 	{
-		TargetingMode = ECombatTargetingMode::TargetEnemy;
+		BeginSkillTargeting();
 	}
-
-	// Réinitialiser l'indication de sélection précédente.
-	if (IsValid(SelectedTarget))
-	{
-		SelectedTarget->SetTargetIndicationVisibility(false);
-	}
-
-	UE_LOG(LogTemp, Warning,TEXT("[Combat] Targeting mode changed to: %s"),
-		TargetingMode == ECombatTargetingMode::TargetAlly? TEXT("TargetAlly"): TEXT("TargetEnemy"));
 }
 
 void UEonBound_CombatManager::SetCombatState(EEonBound_CombatState NewState)
@@ -714,6 +634,8 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 
 	ActiveCombatant = Combatant;
 	
+	EndSkillTargeting();
+	
 	// Avancer les cooldowns des compétences du combattant actif.
 	UEonBound_AbilitySystemComponent* ASC = Cast<UEonBound_AbilitySystemComponent>(Combatant->GetAbilitySystemComponent());
 	if (ASC)
@@ -730,7 +652,12 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 		if (CombatHUD)
 		{
 			CombatHUD->SetButtonVisibility(ECombatHUDState::Basic,true);
-			//CombatHUD->SetButtonVisibility(ECombatHUDState::Skill,true);
+			// Le bouton Skill n'apparaît que si le personnage a une compétence ;
+			// il est grisé tant qu'elle est en cooldown.
+			CombatHUD->SetButtonVisibility(ECombatHUDState::Skill, Combatant->GetSkillTargeting() != nullptr);
+			CombatHUD->SetSkillButtonEnabled(Combatant->CanUseSkill());
+			CombatHUD->SetSkillCooldown(Combatant->GetSkillCooldownRemaining());
+			CombatHUD->SetButtonVisibility(ECombatHUDState::Ult, false);
 		}
 
 		if (bIsNewRound or IsCombatantAlive(SelectedTarget) == false)
@@ -857,4 +784,303 @@ void UEonBound_CombatManager::ClearCombatTimers()
 	{
 		GetWorld()->GetTimerManager().ClearTimer(DelayTimerHandle);
 	}
+}
+
+void UEonBound_CombatManager::BeginSkillTargeting()
+{
+	AEonBound_Character* Caster = ActiveCombatant;
+	const FSkillTargeting* Targeting = IsValid(Caster) ? Caster->GetSkillTargeting() : nullptr;
+
+	if (!Targeting)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] %s n'a pas de compétence."), *GetNameSafe(Caster));
+		return;
+	}
+
+	if (!Caster->CanUseSkill())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] Compétence indisponible (cooldown ou non donnée)."));
+		return;
+	}
+
+	// Masquer l'indication du ciblage normal.
+	if (IsValid(SelectedTarget))
+	{
+		SelectedTarget->SetTargetIndicationVisibility(false);
+	}
+
+	// Activer le ciblage de compétence.
+	ActiveSkillTargeting = *Targeting;
+	bSkillTargeting = true;
+	TargetingMode = (ActiveSkillTargeting.Team == ESkillTargetTeam::Ally) ? ECombatTargetingMode::TargetAlly : ECombatTargetingMode::TargetEnemy;
+
+	// Réinitialiser les cibles de compétence et l'aperçu.
+	SkillPickedTargets.Reset();
+	SkillPreviewTargets.Reset();
+
+	// Une compétence a toujours une cible par défaut.
+	if (AEonBound_Character* DefaultTarget = GetDefaultSkillTarget())
+	{
+		SkillPickedTargets.Add(DefaultTarget);
+	}
+
+	RefreshSkillPreview();
+
+	UE_LOG(LogTemp, Warning, TEXT("[Combat] Ciblage de compétence : équipe %s, motif %d."),
+		ActiveSkillTargeting.Team == ESkillTargetTeam::Ally ? TEXT("Ally") : TEXT("Enemy"),
+		static_cast<int32>(ActiveSkillTargeting.Pattern));
+}
+
+void UEonBound_CombatManager::ConfirmSkill()
+{
+	AEonBound_Character* Caster = ActiveCombatant;
+
+	if (!bSkillTargeting || CombatState != EEonBound_CombatState::PlayerTurn || !IsValid(Caster))
+	{
+		return;
+	}
+
+	TArray<AEonBound_Character*> Targets = ComputeSkillTargets();
+
+	if (Targets.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] Aucune cible choisie pour la compétence."));
+		return;
+	}
+
+	Caster->SetCurrentActionTargets(Targets);
+	SetCombatState(EEonBound_CombatState::ExecutingAction);
+
+	if (!Caster->TrySkill())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[Combat] Skill activation failed. Returning to PlayerTurn."));
+		SetCombatState(EEonBound_CombatState::PlayerTurn);
+		Caster->SetCurrentActionTargets(TArray<AEonBound_Character*>());
+		return;
+	}
+
+	EndSkillTargeting();
+
+	if (CombatHUD)
+	{
+		CombatHUD->SetButtonVisibility(ECombatHUDState::Basic, false);
+		CombatHUD->SetButtonVisibility(ECombatHUDState::Skill, false);
+	}
+}
+
+void UEonBound_CombatManager::EndSkillTargeting()
+{
+	for (AEonBound_Character* Old : SkillPreviewTargets)
+	{
+		if (IsValid(Old))
+		{
+			Old->SetTargetIndicationVisibility(false);
+		}
+	}
+
+	SkillPreviewTargets.Reset();
+	SkillPickedTargets.Reset();
+	bSkillTargeting = false;
+	TargetingMode = ECombatTargetingMode::TargetEnemy;
+}
+
+void UEonBound_CombatManager::PickSkillTarget(AEonBound_Character* Clicked)
+{
+	if (!bSkillTargeting || !IsValid(Clicked) || !IsCombatantAlive(Clicked))
+	{
+		return;
+	}
+
+	// Vérifie que la cible cliquée appartient à l'équipe correcte.
+	const TArray<TObjectPtr<AEonBound_Character>>& Team = ActiveSkillTargeting.Team == ESkillTargetTeam::Ally ? PlayerCombatants : EnemyCombatants;
+
+	if (!Team.Contains(Clicked))
+	{
+		return;
+	}
+
+	switch (ActiveSkillTargeting.Pattern)
+	{
+	case ESkillTargetPattern::All:
+		// Toute l'équipe est déjà visée : le clic ne change rien.
+		return;
+
+	case ESkillTargetPattern::MultiSelect:
+		if (SkillPickedTargets.Contains(Clicked))
+		{
+			SkillPickedTargets.Remove(Clicked);
+		}
+		else if (SkillPickedTargets.Num() < ActiveSkillTargeting.MaxTargets)
+		{
+			SkillPickedTargets.Add(Clicked);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Combat] Maximum de %d cibles atteint."), ActiveSkillTargeting.MaxTargets);
+			return;
+		}
+		break;
+
+	default:
+		SkillPickedTargets.Reset();
+		SkillPickedTargets.Add(Clicked);
+		break;
+	}
+
+	RefreshSkillPreview();
+}
+
+void UEonBound_CombatManager::RefreshSkillPreview()
+{
+	for (AEonBound_Character* Old : SkillPreviewTargets)
+	{
+		if (IsValid(Old))
+		{
+			Old->SetTargetIndicationVisibility(false);
+		}
+	}
+
+	SkillPreviewTargets.Reset();
+
+	for (AEonBound_Character* Target : ComputeSkillTargets())
+	{
+		SkillPreviewTargets.Add(Target);
+		Target->SetTargetIndicationVisibility(true);
+	}
+}
+
+TArray<AEonBound_Character*> UEonBound_CombatManager::ComputeSkillTargets() const
+{
+	TArray<AEonBound_Character*> Result;
+
+	// Détermine l'équipe à viser en fonction du ciblage de la compétence.
+	const TArray<TObjectPtr<AEonBound_Character>>& Team = ActiveSkillTargeting.Team == ESkillTargetTeam::Ally ? PlayerCombatants : EnemyCombatants;
+
+	switch (ActiveSkillTargeting.Pattern)
+	{
+		
+	case ESkillTargetPattern::All:
+		{
+			for (AEonBound_Character* Member : Team)
+			{
+				if (IsCombatantAlive(Member))
+				{
+					Result.Add(Member);
+				}
+			}
+			break;
+		}
+
+	case ESkillTargetPattern::MultiSelect:
+		{
+			for (AEonBound_Character* Picked : SkillPickedTargets)
+			{
+				if (IsCombatantAlive(Picked))
+				{
+					Result.Add(Picked);
+				}
+			}
+			break;
+		}
+
+	case ESkillTargetPattern::Single:
+	case ESkillTargetPattern::SingleAndAdjacent:
+		{
+			if (SkillPickedTargets.IsEmpty())
+			{
+				break;
+			}
+
+			AEonBound_Character* Center = SkillPickedTargets[0];
+
+			if (!IsCombatantAlive(Center))
+			{
+				break;
+			}
+
+			AEonBound_Character* Previous = nullptr;
+			AEonBound_Character* Next = nullptr;
+
+			if (ActiveSkillTargeting.Pattern == ESkillTargetPattern::SingleAndAdjacent)
+			{
+				// Voisins = combattants vivants des emplacements les plus proches de chaque côté.
+				for (AEonBound_Character* Member : Team)
+				{
+					if (Member == Center || !IsCombatantAlive(Member))
+					{
+						continue;
+					}
+
+					const int32 Slot = Member->GetSlotIndex();
+					const int32 CenterSlot = Center->GetSlotIndex();
+
+					if (Slot < CenterSlot && (!Previous || Slot > Previous->GetSlotIndex()))
+					{
+						Previous = Member;
+					}
+					else if (Slot > CenterSlot && (!Next || Slot < Next->GetSlotIndex()))
+					{
+						Next = Member;
+					}
+				}
+			}
+
+			if (Previous)
+			{
+				Result.Add(Previous);
+			}
+			Result.Add(Center);
+			if (Next)
+			{
+				Result.Add(Next);
+			}
+			break;
+		}
+	}
+
+	return Result;
+}
+
+AEonBound_Character* UEonBound_CombatManager::GetDefaultSkillTarget() const
+{
+	// Compétence offensive : l'ennemi déjà sélectionné, sinon le premier vivant.
+	if (ActiveSkillTargeting.Team == ESkillTargetTeam::Enemy)
+	{
+		if (IsValid(SelectedTarget) && EnemyCombatants.Contains(SelectedTarget) && IsCombatantAlive(SelectedTarget))
+		{
+			return SelectedTarget;
+		}
+
+		for (AEonBound_Character* Enemy : EnemyCombatants)
+		{
+			if (IsCombatantAlive(Enemy))
+			{
+				return Enemy;
+			}
+		}
+
+		return nullptr;
+	}
+
+	// Compétence de soutien : l'allié vivant qui a le moins de PV.
+	AEonBound_Character* Lowest = nullptr;
+	float LowestHealth = TNumericLimits<float>::Max();
+
+	for (AEonBound_Character* Ally : PlayerCombatants)
+	{
+		if (!IsCombatantAlive(Ally))
+		{
+			continue;
+		}
+
+		const float Health = Ally->GetAbilitySystemComponent()->GetNumericAttribute(UEonBound_AttributeSet::GetHealthAttribute());
+
+		if (Health < LowestHealth)
+		{
+			LowestHealth = Health;
+			Lowest = Ally;
+		}
+	}
+
+	return Lowest;
 }
