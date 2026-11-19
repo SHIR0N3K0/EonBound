@@ -16,6 +16,7 @@ class UEonBound_CombatManager;
 class UFocusUserWidget;
 class UWidgetComponent;
 class ADamageNumberActor;
+class UEonBound_GA_Ultimate;
 
 UCLASS()
 class EONBOUND_API AEonBound_Character : public ACharacter, public IAbilitySystemInterface
@@ -55,7 +56,7 @@ protected:
 	TSubclassOf<UEonBound_GA_Skill> SkillAbility;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
-	TSubclassOf<UGameplayAbility> UltimateAbility;
+	TSubclassOf<UEonBound_GA_Ultimate> UltimateAbility;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UFocusUserWidget> FocusWidgetClass;
@@ -112,19 +113,29 @@ public:
 	{
 		return CurrentActionTargets;
 	}
-
+	
 	// Réglage de l'emplacement dans la formation, copié depuis le point de spawn.
 	void SetSlotIndex(int32 InSlotIndex) { SlotIndex = InSlotIndex; }
 	int32 GetSlotIndex() const { return SlotIndex; }
 
 	// Réglage de ciblage de la compétence, lu sur la classe (nullptr si le perso n'en a pas).
 	const FSkillTargeting* GetSkillTargeting() const;
-
 	// Vrai si la compétence est donnée, hors cooldown et utilisable.
 	bool CanUseSkill() const;
-	
 	// Tours de cooldown restants sur la compétence (0 si disponible).
 	int32 GetSkillCooldownRemaining() const;
+	
+	
+	// Ultime : même logique que la compétence.
+	bool TryUltimate();
+	const FSkillTargeting* GetUltimateTargeting() const;
+	// Vrai si l'ultime est donné, utilisable et que l'énergie suffit.
+	bool CanUseUltimate() const;
+	
+	
+	void AddEnergy(float Amount);
+	float GetEnergy() const;
+	float GetEnergyMax() const;
 	
 	void SetTargetIndicationVisibility(bool bVisible);
 	

@@ -12,6 +12,7 @@
 #include "EonBound/GAS/EonBound_AttributeSet.h"
 #include "EonBound/GAS/Effects/EonBound_GE_DefaultAttribute.h"
 #include "EonBound/Combat/DamageNumberActor.h"
+#include "EonBound/GAS/Abilities/EonBound_GA_Ultimate.h"
 
 // Sets default values
 AEonBound_Character::AEonBound_Character()
@@ -300,4 +301,79 @@ int32 AEonBound_Character::GetSkillCooldownRemaining() const
 	const FGameplayTag& Tag = SkillAbility->GetDefaultObject<UEonBound_GA_Skill>()->GetCooldownTag();
 
 	return Tag.IsValid() ? EonBound_ASC->GetTurnCooldownRemaining(Tag) : 0;
+}
+
+void AEonBound_Character::AddEnergy(float Amount)
+{
+	if (!HasAuthority() || !EonBound_ASC)
+	{
+		return;
+	}
+
+	const float Current = GetEnergy();
+	const float NewValue = FMath::Clamp(Current + Amount, 0.f, GetEnergyMax());
+
+	EonBound_ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetEnergyAttribute(), NewValue);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Energy] %s : %.0f -> %.0f / %.0f"), *GetName(), Current, NewValue, GetEnergyMax());
+}
+
+float AEonBound_Character::GetEnergy() const
+{
+	return EonBound_ASC ? EonBound_ASC->GetNumericAttribute(UEonBound_AttributeSet::GetEnergyAttribute()) : 0.f;
+}
+
+float AEonBound_Character::GetEnergyMax() const
+{
+	return EonBound_ASC ? EonBound_ASC->GetNumericAttribute(UEonBound_AttributeSet::GetEnergyMaxAttribute()) : 0.f;
+}
+
+bool AEonBound_Character::TryUltimate()
+{
+	if (!UltimateAbility || !EonBound_ASC || bIsDead)
+	{
+		return false;
+	}
+
+	if (CurrentActionTargets.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] TryUltimate: aucune cible pour %s."), *GetName());
+		return false;
+	}
+
+	const bool bActivated = EonBound_ASC->TryActivateAbilityByClass(UltimateAbility);
+
+	if (!bActivated)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Ultimate activation failed: not granted, not enough energy or blocked."));
+	}
+
+	return bActivated;
+}
+
+const FSkillTargeting* AEonBound_Character::GetUltimateTargeting() const
+{
+	if (!UltimateAbility)
+	{
+		return nullptr;
+	}
+
+	return &UltimateAbility->GetDefaultObject<UEonBound_GA_Ultimate>()->GetTargeting();
+}
+
+bool AEonBound_Character::CanUseUltimate() const
+{
+	if (!UltimateAbility || !EonBound_ASC || bIsDead)
+	{
+		return false;
+	}
+
+	const FGameplayAbilitySpec* Spec = EonBound_ASC->FindAbilitySpecFromClass(UltimateAbility);
+
+	if (!Spec || !Spec->Ability)
+	{
+		return false;
+	}
+
+	return Spec->Ability->CanActivateAbility(Spec->Handle, EonBound_ASC->AbilityActorInfo.Get());
 }

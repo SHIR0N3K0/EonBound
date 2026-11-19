@@ -54,6 +54,15 @@ protected:
 	TObjectPtr<UTextBlock> TXT_CoolDownSkill;
 	
 	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UOverlay> Overlay_Ult;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UButton> BTN_Ult;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> TXT_EnergyValue;
+	
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UVerticalBox> VB_TurnOrder;
 	
 	virtual void NativeConstruct() override;
@@ -74,6 +83,9 @@ public:
 	UFUNCTION()
 	void OnSkillButtonClicked();
 	
+	UFUNCTION()
+	void OnUltButtonClicked();
+	
 	UPROPERTY()
 	TObjectPtr<UEonBound_CombatManager> CombatManagerRef;
 	
@@ -81,5 +93,13 @@ public:
 	
 	void SetSkillButtonEnabled(bool bEnabled);
 	
+	void SetUltButtonEnabled(bool bEnabled);
+	
 	void SetSkillCooldown(int32 RemainingTurns);
+	
+	void SetEnergyDisplay(float Current, float Max);
+
+	// Pour le futur matériau de remplissage : Percent va de 0 à 1.
+	UFUNCTION()
+	void OnEnergyUpdated(float Current, float Max, float Percent);
 };

@@ -38,7 +38,7 @@ void UDamageNumber_UserWidget::SetDamageValue(float DamageValue, bool bIsCritica
 		}
 		else if (DamageValue < 0)
 		{
-			// Soin : valeur négative en entrée, affichée en vert avec un « + ».
+			// Soin : valeur négative en entrée.
 			TXT_DamageNumber->SetColorAndOpacity(FSlateColor(FLinearColor::Green));
 			FSlateFontInfo FontInfo = TXT_DamageNumber->GetFont();
 			FontInfo.Size = 32;

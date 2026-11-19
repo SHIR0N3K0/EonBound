@@ -22,6 +22,7 @@ void AEonBound_PlayerCharacter::BeginPlay()
 		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetHealthAttribute(),200.0f);
 		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetHealthMaxAttribute(),200.0f);
 		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetCritChanceAttribute(),30.0f);
+		ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetEnergyAttribute(),50.0f);
 		
 	}
 }

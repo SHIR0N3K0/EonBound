@@ -16,7 +16,8 @@ UEonBound_AttributeSet::UEonBound_AttributeSet()
 	InitDefense(50);
 	InitSpeed(200);
 	InitATB(1);
-	InitEnergy(100);
+	InitEnergy(50);
+	InitEnergyMax(100);
 	InitDamage(0);
 	InitBalancingCoefficient(150);
 	InitCritChance(10);
@@ -33,6 +34,7 @@ void UEonBound_AttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(UEonBound_AttributeSet, Speed);
 	DOREPLIFETIME(UEonBound_AttributeSet, ATB);
 	DOREPLIFETIME(UEonBound_AttributeSet, Energy);
+	DOREPLIFETIME(UEonBound_AttributeSet, EnergyMax);
 	DOREPLIFETIME(UEonBound_AttributeSet, Damage);
 	DOREPLIFETIME(UEonBound_AttributeSet, BalancingCoefficient);
 	DOREPLIFETIME(UEonBound_AttributeSet, CritChance);
@@ -83,6 +85,11 @@ void UEonBound_AttributeSet::PostGameplayEffectExecute(const struct FGameplayEff
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetHealthMax()));
+	}
+	
+	if (Data.EvaluatedData.Attribute == GetEnergyAttribute())
+	{
+		SetEnergy(FMath::Clamp(GetEnergy(), 0.f, GetEnergyMax()));
 	}
 }
 

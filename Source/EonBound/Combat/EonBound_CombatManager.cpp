@@ -211,6 +211,7 @@ void UEonBound_CombatManager::RequestPlayerBasicAttack(AEonBound_Character* Atta
 	{
 		CombatHUD->SetButtonVisibility(ECombatHUDState::Basic,false);
 		CombatHUD->SetButtonVisibility(ECombatHUDState::Skill,false);
+		CombatHUD->SetButtonVisibility(ECombatHUDState::Ult, false);
 	}
 
 	TargetingMode = ECombatTargetingMode::TargetEnemy;
@@ -398,20 +399,34 @@ void UEonBound_CombatManager::CancelTargeting()
 
 void UEonBound_CombatManager::ToggleSkillTargeting()
 {
+	ToggleSlotTargeting(ECombatSkillSlot::Skill);
+}
+
+void UEonBound_CombatManager::ToggleUltimateTargeting()
+{
+	ToggleSlotTargeting(ECombatSkillSlot::Ultimate);
+}
+
+void UEonBound_CombatManager::ToggleSlotTargeting(ECombatSkillSlot Slot)
+{
 	if (CombatState != EEonBound_CombatState::PlayerTurn || !IsValid(ActiveCombatant))
 	{
 		return;
 	}
 
-	// Premier appui : entrer en ciblage. Deuxième appui : confirmer.
 	if (bSkillTargeting)
 	{
-		ConfirmSkill();
+		// Même touche : confirmer. Autre touche : changer d'emplacement.
+		if (ActiveSlot == Slot)
+		{
+			ConfirmSkill();
+			return;
+		}
+
+		EndSkillTargeting();
 	}
-	else
-	{
-		BeginSkillTargeting();
-	}
+
+	BeginSkillTargeting(Slot);
 }
 
 void UEonBound_CombatManager::SetCombatState(EEonBound_CombatState NewState)
@@ -652,12 +667,15 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 		if (CombatHUD)
 		{
 			CombatHUD->SetButtonVisibility(ECombatHUDState::Basic,true);
-			// Le bouton Skill n'apparaît que si le personnage a une compétence ;
+			// Le bouton Skill n'apparaît que si le personnage a une compétence
 			// il est grisé tant qu'elle est en cooldown.
 			CombatHUD->SetButtonVisibility(ECombatHUDState::Skill, Combatant->GetSkillTargeting() != nullptr);
+			// L'overlay Ult n'apparaît que si le personnage a un ultime.
+			CombatHUD->SetButtonVisibility(ECombatHUDState::Ult, Combatant->GetUltimateTargeting() != nullptr);
+			CombatHUD->SetUltButtonEnabled(Combatant->CanUseUltimate());
 			CombatHUD->SetSkillButtonEnabled(Combatant->CanUseSkill());
 			CombatHUD->SetSkillCooldown(Combatant->GetSkillCooldownRemaining());
-			CombatHUD->SetButtonVisibility(ECombatHUDState::Ult, false);
+			CombatHUD->SetEnergyDisplay(Combatant->GetEnergy(), Combatant->GetEnergyMax());
 		}
 
 		if (bIsNewRound or IsCombatantAlive(SelectedTarget) == false)
@@ -786,16 +804,33 @@ void UEonBound_CombatManager::ClearCombatTimers()
 	}
 }
 
-void UEonBound_CombatManager::BeginSkillTargeting()
+void UEonBound_CombatManager::BeginSkillTargeting(ECombatSkillSlot Slot)
 {
+
 	AEonBound_Character* Caster = ActiveCombatant;
-	const FSkillTargeting* Targeting = IsValid(Caster) ? Caster->GetSkillTargeting() : nullptr;
+	const bool bUltimate = (Slot == ECombatSkillSlot::Ultimate);
+
+	const FSkillTargeting* Targeting = nullptr;
+	if (IsValid(Caster))
+	{
+		Targeting = bUltimate ? Caster->GetUltimateTargeting() : Caster->GetSkillTargeting();
+	}
 
 	if (!Targeting)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Combat] %s n'a pas de compétence."), *GetNameSafe(Caster));
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] %s n'a pas de capacité pour cet emplacement."), *GetNameSafe(Caster));
 		return;
 	}
+
+	const bool bUsable = bUltimate ? Caster->CanUseUltimate() : Caster->CanUseSkill();
+
+	if (!bUsable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combat] Capacité indisponible (cooldown, énergie ou non donnée)."));
+		return;
+	}
+
+	ActiveSlot = Slot;
 
 	if (!Caster->CanUseSkill())
 	{
@@ -851,7 +886,9 @@ void UEonBound_CombatManager::ConfirmSkill()
 	Caster->SetCurrentActionTargets(Targets);
 	SetCombatState(EEonBound_CombatState::ExecutingAction);
 
-	if (!Caster->TrySkill())
+	const bool bActivated = (ActiveSlot == ECombatSkillSlot::Ultimate) ? Caster->TryUltimate() : Caster->TrySkill();
+
+	if (!bActivated)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[Combat] Skill activation failed. Returning to PlayerTurn."));
 		SetCombatState(EEonBound_CombatState::PlayerTurn);
@@ -865,6 +902,7 @@ void UEonBound_CombatManager::ConfirmSkill()
 	{
 		CombatHUD->SetButtonVisibility(ECombatHUDState::Basic, false);
 		CombatHUD->SetButtonVisibility(ECombatHUDState::Skill, false);
+		CombatHUD->SetButtonVisibility(ECombatHUDState::Ult, false);
 	}
 }
 

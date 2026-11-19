@@ -40,12 +40,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> SkillAction;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> UltimateAction;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
 
 private:
 	void HandleBasicAttack();
 	void HandleSkill();
+	void HandleUltimate();
 	void HandleInteract();
 	void HandleCancel();
 

@@ -30,6 +30,13 @@ enum class ECombatActionMode : uint8
 	Skill
 };
 
+UENUM()
+enum class ECombatSkillSlot : uint8
+{
+	Skill,
+	Ultimate
+};
+
 /**
  * 
  */
@@ -109,6 +116,7 @@ public:
 	int32 TotalWaves = 1;
 	
 	void ToggleSkillTargeting();
+	void ToggleUltimateTargeting();
 	
 	bool IsSkillTargeting() const
 	{
@@ -133,7 +141,8 @@ private:
 	bool ValidateCombatants();
 	
 	// Ciblage des compétences
-	void BeginSkillTargeting();
+	void ToggleSlotTargeting(ECombatSkillSlot Slot);
+	void BeginSkillTargeting(ECombatSkillSlot Slot);
 	void ConfirmSkill();
 	void EndSkillTargeting();
 	void PickSkillTarget(AEonBound_Character* Clicked);
@@ -141,6 +150,7 @@ private:
 	TArray<AEonBound_Character*> ComputeSkillTargets() const;
 
 	bool bSkillTargeting = false;
+	ECombatSkillSlot ActiveSlot = ECombatSkillSlot::Skill;
 
 	FSkillTargeting ActiveSkillTargeting;
 

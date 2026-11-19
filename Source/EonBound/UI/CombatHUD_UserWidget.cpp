@@ -24,6 +24,14 @@ void UCombatHUD_UserWidget::NativeConstruct()
 	{
 		BTN_Skill->OnClicked.AddDynamic(this, &UCombatHUD_UserWidget::OnSkillButtonClicked);
 	}
+	if (IsValid(Overlay_Ult))
+	{
+		Overlay_Ult->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (IsValid(BTN_Ult))
+	{
+		BTN_Ult->OnClicked.AddDynamic(this, &UCombatHUD_UserWidget::OnUltButtonClicked);
+	}
 }
 
 void UCombatHUD_UserWidget::InitializePlayerStatuses(const TArray<AEonBound_Character*>& PlayerCharacters)
@@ -94,6 +102,24 @@ void UCombatHUD_UserWidget::OnSkillButtonClicked()
 	CombatManagerRef->ToggleSkillTargeting();
 }
 
+void UCombatHUD_UserWidget::OnUltButtonClicked()
+{
+	if (!IsValid(CombatManagerRef))
+	{
+		return;
+	}
+
+	CombatManagerRef->ToggleUltimateTargeting();
+}
+
+void UCombatHUD_UserWidget::SetUltButtonEnabled(bool bEnabled)
+{
+	if (IsValid(BTN_Ult))
+	{
+		BTN_Ult->SetIsEnabled(bEnabled);
+	}
+}
+
 void UCombatHUD_UserWidget::SetButtonVisibility(ECombatHUDState State, bool bIsVisible)
 {
 	switch (State)
@@ -102,7 +128,7 @@ void UCombatHUD_UserWidget::SetButtonVisibility(ECombatHUDState State, bool bIsV
 		if (IsValid(Overlay_Basic))
 		{
 			Overlay_Basic->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-		}
+		}	
 		break;
 	case ECombatHUDState::Skill:
 		if (IsValid(Overlay_Skill))
@@ -111,7 +137,10 @@ void UCombatHUD_UserWidget::SetButtonVisibility(ECombatHUDState State, bool bIsV
 		}
 		break;
 	case ECombatHUDState::Ult:
-		// Handle Ultimate button visibility
+		if (IsValid(Overlay_Ult))
+		{
+			Overlay_Ult->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		}
 		break;
 	}
 }
@@ -140,4 +169,19 @@ void UCombatHUD_UserWidget::SetSkillCooldown(int32 RemainingTurns)
 	{
 		TXT_CoolDownSkill->SetVisibility(ESlateVisibility::Hidden);
 	}
+}
+
+void UCombatHUD_UserWidget::SetEnergyDisplay(float Current, float Max)
+{
+	if (IsValid(TXT_EnergyValue))
+	{
+		TXT_EnergyValue->SetText(FText::FromString(FString::Printf(TEXT("%.0f/%.0f"), Current, Max)));
+	}
+
+	const float Percent = Max > 0.f ? FMath::Clamp(Current / Max, 0.f, 1.f) : 0.f;
+	OnEnergyUpdated(Current, Max, Percent);
+}
+
+void UCombatHUD_UserWidget::OnEnergyUpdated(float Current, float Max, float Percent)
+{
 }

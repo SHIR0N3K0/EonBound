@@ -90,6 +90,11 @@ void AEonBound_PlayerControler::SetupInputComponent()
 			EnhancedInputComponent->BindAction(SkillAction,ETriggerEvent::Started,this,&AEonBound_PlayerControler::HandleSkill);
 			UE_LOG(LogTemp, Warning, TEXT("[Input] IA_Skill bound: %s"),*GetNameSafe(SkillAction));
 		}
+		if (UltimateAction)
+		{
+			EnhancedInputComponent->BindAction(UltimateAction, ETriggerEvent::Started, this, &AEonBound_PlayerControler::HandleUltimate);
+			UE_LOG(LogTemp, Warning, TEXT("[Input] IA_Ultimate bound: %s"),*GetNameSafe(UltimateAction));
+		}
 		if (CancelAction)
 		{
 			EnhancedInputComponent->BindAction(CancelAction,ETriggerEvent::Started,this,&AEonBound_PlayerControler::HandleCancel);
@@ -98,6 +103,10 @@ void AEonBound_PlayerControler::SetupInputComponent()
 		{
 			UE_LOG(LogTemp, Error, TEXT("[Input] IA_Cancel is missing on %s."),*GetNameSafe(this));
 		}
+		if (UltimateAction)
+{
+	EnhancedInputComponent->BindAction(UltimateAction, ETriggerEvent::Started, this, &AEonBound_PlayerControler::HandleUltimate);
+}
 	}
 	else
 	{
@@ -138,6 +147,19 @@ void AEonBound_PlayerControler::HandleSkill()
 	}
 
 	Manager->ToggleSkillTargeting();
+}
+
+void AEonBound_PlayerControler::HandleUltimate()
+{
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Input] IA_Ultimate triggered."));
+
+	if (!IsValid(Manager))
+	{
+		return;
+	}
+
+	Manager->ToggleUltimateTargeting();
 }
 
 void AEonBound_PlayerControler::HandleInteract()
