@@ -131,6 +131,8 @@ void UEonBound_GA_NormalAttack::OnDelayTimerFinished()
 	// Notifie le CombatManager que l'action est terminée, afin qu'il puisse passer au tour suivant.
 	if (AEonBound_Character* AttackingChar = Cast<AEonBound_Character>(ActorInfoCopy->AvatarActor.Get()))
 	{
+		AttackingChar->AddEnergy(EnergyGain);
+		
 		UE_LOG(LogTemp, Warning,TEXT("[Combat] Attacker: %s | Manager: %s"),*AttackingChar->GetName(),
 			AttackingChar->GetCombatManager()? TEXT("Valid"): TEXT("NULL"));
 		

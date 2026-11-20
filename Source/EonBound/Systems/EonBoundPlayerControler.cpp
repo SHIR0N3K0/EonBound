@@ -103,14 +103,6 @@ void AEonBound_PlayerControler::SetupInputComponent()
 		{
 			UE_LOG(LogTemp, Error, TEXT("[Input] IA_Cancel is missing on %s."),*GetNameSafe(this));
 		}
-		if (UltimateAction)
-{
-	EnhancedInputComponent->BindAction(UltimateAction, ETriggerEvent::Started, this, &AEonBound_PlayerControler::HandleUltimate);
-}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[Input] InputComponent is not an EnhancedInputComponent."));
 	}
 }
 

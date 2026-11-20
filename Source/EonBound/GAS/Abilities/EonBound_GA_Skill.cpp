@@ -103,6 +103,11 @@ void UEonBound_GA_Skill::OnFinishSkillActionTimer()
 {
 	AEonBound_Character* Caster = CurrentActorInfo ? Cast<AEonBound_Character>(CurrentActorInfo->AvatarActor.Get()) : nullptr;
 
+	if (Caster)
+	{
+		Caster->AddEnergy(EnergyGain);
+	}
+
 	if (Caster && Caster->GetCombatManager())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Combat] Skill %s: NotifyActionFinished."), *GetNameSafe(this));

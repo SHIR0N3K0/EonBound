@@ -675,7 +675,8 @@ void UEonBound_CombatManager::StartCurrentTurn(bool bIsNewRound)
 			CombatHUD->SetUltButtonEnabled(Combatant->CanUseUltimate());
 			CombatHUD->SetSkillButtonEnabled(Combatant->CanUseSkill());
 			CombatHUD->SetSkillCooldown(Combatant->GetSkillCooldownRemaining());
-			CombatHUD->SetEnergyDisplay(Combatant->GetEnergy(), Combatant->GetEnergyMax());
+			const float UltCost = Combatant->GetUltimateEnergyCost();
+			CombatHUD->SetEnergyDisplay(Combatant->GetEnergy(), UltCost > 0.f ? UltCost : Combatant->GetEnergyMax());
 		}
 
 		if (bIsNewRound or IsCombatantAlive(SelectedTarget) == false)

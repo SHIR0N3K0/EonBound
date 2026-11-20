@@ -33,4 +33,7 @@ protected:
 	void OnDelayTimerFinished();
 	
 	const FGameplayAbilityActorInfo* ActorInfoCopy = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Energy", meta = (ClampMin = "0"))
+	float EnergyGain = 20.f;
 };

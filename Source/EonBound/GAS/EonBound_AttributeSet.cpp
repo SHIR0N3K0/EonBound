@@ -76,6 +76,12 @@ void UEonBound_AttributeSet::PostGameplayEffectExecute(const struct FGameplayEff
 				Cast<AEonBound_Character>(Data.Target.GetAvatarActor()))
 			{
 				TargetCharacter->SpawnDamageNumber(ActualDamage, bIsCritical);
+
+				// Gain d'énergie en subissant des dégâts (pas si le perso meurt).
+				if (NewHealthValue > 0.f)
+				{
+					TargetCharacter->AddEnergy(TargetCharacter->GetEnergyGainOnHit());
+				}
 			}
 		}
 		

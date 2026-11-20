@@ -83,6 +83,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Damage Numbers")
 	float DamageNumberHeight = 120.f;
+	
+	// Énergie gagnée à chaque fois que ce personnage subit des dégâts (sans mourir).
+	UPROPERTY(EditDefaultsOnly, Category = "Combat|Energy", meta = (ClampMin = "0"))
+	float EnergyGainOnHit = 10.f;
 
 public:
 	void SetCombatManager(UEonBound_CombatManager* InCombatManager);
@@ -136,6 +140,9 @@ public:
 	void AddEnergy(float Amount);
 	float GetEnergy() const;
 	float GetEnergyMax() const;
+	float GetEnergyGainOnHit() const { return EnergyGainOnHit; }
+	// Coût d'activation de l'ultime (0 si le perso n'en a pas).
+	float GetUltimateEnergyCost() const;
 	
 	void SetTargetIndicationVisibility(bool bVisible);
 	

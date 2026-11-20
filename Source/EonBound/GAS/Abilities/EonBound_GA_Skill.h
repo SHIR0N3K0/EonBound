@@ -52,6 +52,10 @@ protected:
 	
 	// Fin d'action commune : attend Delay secondes, prévient le CombatManager, puis termine l'ability.
 	void FinishSkillAction(float Delay = 2.0f);
+	
+	// Énergie gagnée par le lanceur à la fin de la compétence.
+	UPROPERTY(EditDefaultsOnly, Category = "Energy", meta = (ClampMin = "0"))
+	float EnergyGain = 30.f;
 
 private:
 	void OnFinishSkillActionTimer();

@@ -9,6 +9,7 @@ UEonBound_GA_Ultimate::UEonBound_GA_Ultimate()
 {
 	// Remplace le tag Ability.Skill posé par la classe parent.
 	SetAssetTags(FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName("Ability.Ultimate"))));
+	EnergyGain = 0.f;
 }
 
 bool UEonBound_GA_Ultimate::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, 

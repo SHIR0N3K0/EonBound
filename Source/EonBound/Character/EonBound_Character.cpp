@@ -377,3 +377,13 @@ bool AEonBound_Character::CanUseUltimate() const
 
 	return Spec->Ability->CanActivateAbility(Spec->Handle, EonBound_ASC->AbilityActorInfo.Get());
 }
+
+float AEonBound_Character::GetUltimateEnergyCost() const
+{
+	if (!UltimateAbility)
+	{
+		return 0.f;
+	}
+
+	return UltimateAbility->GetDefaultObject<UEonBound_GA_Ultimate>()->GetEnergyCost();
+}

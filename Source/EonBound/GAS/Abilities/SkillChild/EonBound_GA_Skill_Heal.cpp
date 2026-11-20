@@ -21,8 +21,6 @@ UEonBound_GA_Skill_Heal::UEonBound_GA_Skill_Heal()
 	
 	// Cooldown
 	CooldownTag = FGameplayTag::RequestGameplayTag(FName("Cooldown.Skill.Heal"));
-
-	ActivationBlockedTags.AddTag(CooldownTag);
 	
 	HealEffectClass = UEonBound_GE_Heal::StaticClass();
 }
