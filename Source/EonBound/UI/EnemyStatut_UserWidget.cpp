@@ -31,6 +31,11 @@ void UEnemyStatut_UserWidget::InitializeWidgetInfo(AEonBound_Character* Characte
 			.AddWeakLambda(this, [this](const FOnAttributeChangeData& Data)
 				{UpdateHealth();});
 	
+	// Bind to action gauge changes
+	ActionGaugeChangedHandle = BindedEnemyCharacterASC->
+	GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetATBAttribute())
+		.AddWeakLambda(this, [this](const FOnAttributeChangeData& Data){UpdateActionGauge();});
+	
 	if (BindedEnemyCharacter)
 	{
 		SetName(BindedEnemyCharacter->GetName());
@@ -64,6 +69,17 @@ void UEnemyStatut_UserWidget::SetName(const FString& NewName)
 	}
 }
 
+void UEnemyStatut_UserWidget::UpdateActionGauge()
+{
+	if (!BindedEnemyCharacterASC || !ProgressBar_EnemyAttackGauge)
+	{
+		return;
+	}
+
+	const float Gauge = BindedEnemyCharacterASC->GetNumericAttribute(UEonBound_AttributeSet::GetATBAttribute());
+	ProgressBar_EnemyAttackGauge->SetPercent(FMath::Clamp(Gauge / UEonBound_AttributeSet::ActionGaugeMax, 0.f, 1.f));
+}
+
 void UEnemyStatut_UserWidget::NativeDestruct()
 {
 	if (IsValid(BindedEnemyCharacterASC) && HealthChangedHandle.IsValid())
@@ -72,6 +88,14 @@ void UEnemyStatut_UserWidget::NativeDestruct()
 			.Remove(HealthChangedHandle);
 
 		HealthChangedHandle.Reset();
+	}
+	
+	if (IsValid(BindedEnemyCharacterASC) && ActionGaugeChangedHandle.IsValid())
+	{
+		BindedEnemyCharacterASC->GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetATBAttribute())
+			.Remove(ActionGaugeChangedHandle);
+
+		ActionGaugeChangedHandle.Reset();
 	}
 	
 	Super::NativeDestruct();

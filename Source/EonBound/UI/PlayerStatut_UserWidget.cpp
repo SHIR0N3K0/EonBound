@@ -41,8 +41,12 @@ void UPlayerStatut_UserWidget::SetBindedCharacter(AEonBound_Character* Character
 	// Bind to health changes
 	HealthChangedHandle = BindedCharacterASC->
 		GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetHealthAttribute())
-			.AddWeakLambda(this, [this](const FOnAttributeChangeData& Data)
-				{UpdateHealth();});
+			.AddWeakLambda(this, [this](const FOnAttributeChangeData& Data){UpdateHealth();});
+	
+	// Bind to action gauge changes
+	ActionGaugeChangedHandle = BindedCharacterASC->
+	GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetATBAttribute())
+		.AddWeakLambda(this, [this](const FOnAttributeChangeData& Data){UpdateActionGauge();});
 	
 	if (BindedCharacter)
 	{
@@ -96,6 +100,17 @@ void UPlayerStatut_UserWidget::SetName(const FString& NewName)
 	}
 }
 
+void UPlayerStatut_UserWidget::UpdateActionGauge()
+{
+	if (!BindedCharacterASC || !ProgressBar_AllyAttackGauge)
+	{
+		return;
+	}
+
+	const float Gauge = BindedCharacterASC->GetNumericAttribute(UEonBound_AttributeSet::GetATBAttribute());
+	ProgressBar_AllyAttackGauge->SetPercent(FMath::Clamp(Gauge / UEonBound_AttributeSet::ActionGaugeMax, 0.f, 1.f));
+}
+
 void UPlayerStatut_UserWidget::NativeDestruct()
 {
 	if (IsValid(BindedCharacterASC) && HealthChangedHandle.IsValid())
@@ -105,5 +120,14 @@ void UPlayerStatut_UserWidget::NativeDestruct()
 
 		HealthChangedHandle.Reset();
 	}
+	
+	if (IsValid(BindedCharacterASC) && ActionGaugeChangedHandle.IsValid())
+	{
+		BindedCharacterASC->GetGameplayAttributeValueChangeDelegate(UEonBound_AttributeSet::GetATBAttribute())
+			.Remove(ActionGaugeChangedHandle);
+
+		ActionGaugeChangedHandle.Reset();
+	}
+	
 	Super::NativeDestruct();
 }

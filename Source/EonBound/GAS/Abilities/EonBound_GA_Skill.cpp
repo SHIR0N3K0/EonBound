@@ -37,6 +37,11 @@ bool UEonBound_GA_Skill::CommitSkill(const FGameplayAbilitySpecHandle Handle,con
 void UEonBound_GA_Skill::ApplySkillCooldown(
 	const FGameplayAbilityActorInfo* ActorInfo)
 {
+	if (bIsUltimate)
+	{
+		return;
+	}
+
 	if (CooldownTurns <= 0 || !CooldownEffect || !CooldownTag.IsValid())
 	{
 		return;
@@ -67,9 +72,9 @@ bool UEonBound_GA_Skill::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 	{
 		return false;
 	}
-
+	
 	// Cooldown en tours : la source de vérité est la liste de l'ASC.
-	if (CooldownTag.IsValid() && ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
+	if (CooldownTag.IsValid() && ActorInfo && ActorInfo->AbilitySystemComponent.IsValid() && !bIsUltimate)
 	{
 		const UEonBound_AbilitySystemComponent* ASC = Cast<UEonBound_AbilitySystemComponent>(ActorInfo->AbilitySystemComponent.Get());
 

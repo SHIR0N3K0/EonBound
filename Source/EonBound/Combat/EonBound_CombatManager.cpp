@@ -121,7 +121,8 @@ void UEonBound_CombatManager::StartCombat()
 
 	CurrentTurnIndex = 0;
 	RoundNumber = 1;
-
+	
+	StartGaugeCharging();
 	SetCombatState(EEonBound_CombatState::WaitingForTurn);
 	StartCurrentTurn(true);
 }
@@ -802,6 +803,7 @@ void UEonBound_CombatManager::ClearCombatTimers()
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(DelayTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(GaugeTimerHandle);
 	}
 }
 
@@ -1122,4 +1124,74 @@ AEonBound_Character* UEonBound_CombatManager::GetDefaultSkillTarget() const
 	}
 
 	return Lowest;
+}
+
+void UEonBound_CombatManager::StartGaugeCharging()
+{
+	UWorld* World = GetWorld();
+
+	if (!World)
+	{
+		return;
+	}
+
+	// Toutes les jauges démarrent à 0.
+	for (AEonBound_Character* Combatant : PlayerCombatants)
+	{
+		if (IsValid(Combatant))
+		{
+			Combatant->SetActionGauge(0.f);
+		}
+	}
+
+	for (AEonBound_Character* Combatant : EnemyCombatants)
+	{
+		if (IsValid(Combatant))
+		{
+			Combatant->SetActionGauge(0.f);
+		}
+	}
+
+	LastGaugeTime = World->GetTimeSeconds();
+	// Démarre le timer pour mettre à jour les jauges toutes les 0,05 secondes.
+	World->GetTimerManager().SetTimer(GaugeTimerHandle, this, &UEonBound_CombatManager::TickGauges, 0.05f, true);
+}
+
+void UEonBound_CombatManager::TickGauges()
+{
+	UWorld* World = GetWorld();
+
+	if (!World)
+	{
+		return;
+	}
+
+	// Calcul du temps écoulé depuis la dernière mise à jour des jauges.
+	const double Now = World->GetTimeSeconds();
+	const float DeltaTime = static_cast<float>(Now - LastGaugeTime);
+	LastGaugeTime = Now;
+
+	// Si le combat est terminé, arrêter le timer.
+	if (CombatState == EEonBound_CombatState::Victory || CombatState == EEonBound_CombatState::Defeat)
+	{
+		World->GetTimerManager().ClearTimer(GaugeTimerHandle);
+		return;
+	}
+
+	// Fonction lambda pour charger les jauges d'une équipe.
+	auto Charge = [this, DeltaTime](const TArray<TObjectPtr<AEonBound_Character>>& Team)
+	{
+		for (AEonBound_Character* Combatant : Team)
+		{
+			if (!IsCombatantAlive(Combatant))
+			{
+				continue;
+			}
+
+			Combatant->SetActionGauge(Combatant->GetActionGauge() + GetCombatantSpeed(Combatant) * GaugeFillRate * DeltaTime);
+		}
+	};
+
+	Charge(PlayerCombatants);
+	Charge(EnemyCombatants);
 }

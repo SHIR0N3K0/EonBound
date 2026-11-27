@@ -74,9 +74,9 @@ void UCombatHUD_UserWidget::AddPlayerStatusWidget(UUserWidget* PlayerStatusWidge
 	
 	if (StatusSlot)
 	{
-		StatusSlot->SetPadding(FMargin(0.f, 0.f,10.f,0.f));
-		StatusSlot->SetVerticalAlignment(VAlign_Fill);
-		StatusSlot->SetHorizontalAlignment(HAlign_Fill);
+		StatusSlot->SetPadding(FMargin(0.f, 0.f,30.f,0.f));
+		StatusSlot->SetVerticalAlignment(VAlign_Center);
+		StatusSlot->SetHorizontalAlignment(HAlign_Center);
 	}
 }
 

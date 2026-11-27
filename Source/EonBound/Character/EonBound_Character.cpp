@@ -387,3 +387,19 @@ float AEonBound_Character::GetUltimateEnergyCost() const
 
 	return UltimateAbility->GetDefaultObject<UEonBound_GA_Ultimate>()->GetEnergyCost();
 }
+
+float AEonBound_Character::GetActionGauge() const
+{
+	return EonBound_ASC ? EonBound_ASC->GetNumericAttribute(UEonBound_AttributeSet::GetATBAttribute()) : 0.f;
+}
+
+void AEonBound_Character::SetActionGauge(float Value)
+{
+	if (!HasAuthority() || !EonBound_ASC)
+	{
+		return;
+	}
+
+	EonBound_ASC->SetNumericAttributeBase(UEonBound_AttributeSet::GetATBAttribute(),
+		FMath::Clamp(Value, 0.f, UEonBound_AttributeSet::ActionGaugeMax));
+}

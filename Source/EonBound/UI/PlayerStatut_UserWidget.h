@@ -30,6 +30,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> TXT_CharacterName;
 	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UProgressBar> ProgressBar_AllyAttackGauge;
+	
 	UPROPERTY()
 	TObjectPtr<AEonBound_Character> BindedCharacter;
 	
@@ -48,5 +51,7 @@ public:
 	
 	FDelegateHandle HealthChangedHandle;
 	
+	void UpdateActionGauge();
 
+	FDelegateHandle ActionGaugeChangedHandle;
 };

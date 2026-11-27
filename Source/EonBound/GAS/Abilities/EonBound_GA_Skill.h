@@ -43,7 +43,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Cooldown")
 	FGameplayTag CooldownTag;
 
-
+	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	bool bIsUltimate = false;
+	
 	// Activation
 	bool CommitSkill(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo,const FGameplayAbilityActivationInfo ActivationInfo);
 

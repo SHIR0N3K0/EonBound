@@ -140,6 +140,11 @@ public:
 	void AddEnergy(float Amount);
 	float GetEnergy() const;
 	float GetEnergyMax() const;
+	
+	// Jauge d'action (attribut ATB, de 0 à ActionGaugeMax).
+	float GetActionGauge() const;
+	void SetActionGauge(float Value);
+	
 	float GetEnergyGainOnHit() const { return EnergyGainOnHit; }
 	// Coût d'activation de l'ultime (0 si le perso n'en a pas).
 	float GetUltimateEnergyCost() const;

@@ -70,6 +70,9 @@ public:
 	FGameplayAttributeData Damage;
 	ATTRIBUTE_ACCESSORS_BASIC(UEonBound_AttributeSet, Damage);
 	
+	// Valeur maximale de la jauge d'action (attribut ATB).
+	static constexpr float ActionGaugeMax = 100.f;
+	
 	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
     	
 };

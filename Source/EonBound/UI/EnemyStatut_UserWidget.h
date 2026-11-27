@@ -26,6 +26,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> TXT_EnemyName;
 	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UProgressBar> ProgressBar_EnemyAttackGauge;
+	
 	UPROPERTY()
 	TObjectPtr<AEonBound_Character> BindedEnemyCharacter;
 	
@@ -43,5 +46,9 @@ public:
 	void SetName(const FString& NewName);
 	
 	FDelegateHandle HealthChangedHandle;
+	
+	void UpdateActionGauge();
+
+	FDelegateHandle ActionGaugeChangedHandle;
 	
 };

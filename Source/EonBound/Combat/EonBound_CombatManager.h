@@ -92,6 +92,19 @@ protected:
 	
 	void ClearCombatTimers();
 	
+	// Jauge d'action : gain par seconde = Speed × GaugeFillRate.
+	float GaugeFillRate = 0.2f;
+
+	FTimerHandle GaugeTimerHandle;
+	double LastGaugeTime = 0.0;
+
+	void StartGaugeCharging();
+	void TickGauges();
+	
+	void ResumeGaugeCharging();
+	AEonBound_Character* FindReadyCombatant() const;
+	void FinishTurn();
+	
 	
 public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Combat")
@@ -136,7 +149,7 @@ private:
 	void BuildTurnOrder();
 	float GetCombatantSpeed(const AEonBound_Character* Combatant) const;
 	void AdvanceTurn();
-	void StartCurrentTurn(bool bIsNewRound = false);
+	void StartCurrentTurn(bool bIsNewRound);
 	void SelectFirstLivingEnemy();
 	bool ValidateCombatants();
 	

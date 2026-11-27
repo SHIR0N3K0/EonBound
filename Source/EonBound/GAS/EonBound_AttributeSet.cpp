@@ -15,7 +15,7 @@ UEonBound_AttributeSet::UEonBound_AttributeSet()
 	InitAttack(20);
 	InitDefense(50);
 	InitSpeed(200);
-	InitATB(1);
+	InitATB(0);
 	InitEnergy(50);
 	InitEnergyMax(100);
 	InitDamage(0);
